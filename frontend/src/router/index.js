@@ -16,17 +16,17 @@ export default new Router({
       component: Hello
     },
     {
-      path: '/posts',
+      path: '/show',
       name: 'Posts',
       component: Posts
     },
     {
-      path: '/posts/new',
+      path: '/show/posts/new',
       name: 'NewPost',
       component: NewPost
     },
     {
-      path: '/posts/:id',
+      path: '/show/posts/:id',
       name: 'EditPost',
       component: EditPost
     }
