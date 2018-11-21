@@ -16,7 +16,7 @@ export default new Router({
       component: Hello
     },
     {
-      path: '/ll',
+      path: '/posts',
       name: 'Posts',
       component: Posts
     },
