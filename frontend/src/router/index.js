@@ -16,12 +16,12 @@ export default new Router({
       component: Posts
     },
     {
-      path: '/show/posts/new',
+      path: '/posts/new',
       name: 'NewPost',
       component: NewPost
     },
     {
-      path: '/show/posts/:id',
+      path: '/posts/:id',
       name: 'EditPost',
       component: EditPost
     }
