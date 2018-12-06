@@ -1,9 +1,9 @@
 <template>
-  <div class="posts">
-    <img src="../assets/logo.png">
-    <h3>Yiyun</h3>
-     
-    <h3 align="center" style="margin-bottom: 10px;">------------------------------------------ABOUT  ME-----------------------------------------</h3>
+  <div id="posts">
+    <div class="header">
+      <my-header></my-header>
+    </div>
+    <!--img src="../assets/logo.png"-->
 
     <h3 align="center" >---------------------------------------------POSTS--------------------------------------------</h3>
    
@@ -11,17 +11,18 @@
       <div>
         <router-link v-bind:to="{ name: 'NewArticle' }" class="">Add article</router-link>
       </div>
-      <table align="left">
+      <table align="left" class="fmttr">
         <tr v-for="post in posts">
+          
           <router-link v-bind:to="{ name: 'ShowArticle', params: { id: post._id } }">
             <td><u>{{ post.title}}</u></td>
           </router-link>
-          {{" ("+post.date.split("T")[0] +")"}}
+          {{" (" + post.date.split("-")[2] +" " + month[post.date.split("-")[1]] + ", "+ post.date.split("-")[0] +")"}}
          
-          <td align="center" width="130px">
+          <div style="float:right; text-align:right">
             <router-link v-bind:to="{ name: 'EditArticle', params: { id: post._id } }">Edit</router-link> |
             <a href="#" @click="deletePost(post._id)">Delete</a>
-          </td>
+          </div>
           
           </td>
         </tr>
@@ -37,13 +38,17 @@
 </template>
 
 <script>
-//import PostsService from '@/services/PostsService'
+import myheader from './MyHeader';
 import ArticleService from '@/services/ArticleService'
 export default {
   name: 'posts',
+  components: {
+    MyHeader: myheader
+  },
   data () {
     return {
-      posts: []
+      posts: [],
+      month: ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'June', 'July', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
     }
   },
   mounted () {
@@ -53,6 +58,9 @@ export default {
     async getPosts () {
       const response = await ArticleService.fetchArticles()
       this.posts = response.data.posts
+      for(let i=0; i < this.posts.length; i++){
+        this.posts[i].date = this.posts[i].date.split(" ")[0]
+      }
     },
     async deletePost (id) {
       await ArticleService.deleteArticle(id)
@@ -93,4 +101,8 @@ a.add_post_link {
   font-size: 12px;
   font-weight: bold;
 }
+.fmttr {
+   width: 100%;
+}
+
 </style>

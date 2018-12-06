@@ -15,5 +15,14 @@ export default {
   },
   updateArticle (params) {
     return Api().put('articles/' + params.id, params)
+  },
+  addComment (params){
+    return Api().post('comment', params)
+  },
+  getComments (params) {
+    return Api().get('comment/' + params.id)
+  },
+  updateComment (params) {
+    return Api().put('comment/' + params.id, params)
   }
 }

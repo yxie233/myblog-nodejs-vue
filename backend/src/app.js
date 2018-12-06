@@ -10,20 +10,40 @@ app.use(bodyParser.json())
 app.use(cors())
 app.use(express.static(path.join(__dirname, '../../client/dist')))
 var mongoose = require('mongoose');
-mongoose.connect('mongodb://bilicrawlerAdmin:addData2018@ds253889.mlab.com:53889/bilibilidata');
+mongoose.connect('mongodb://bilicrawlerAdmin:addData2018@ds253889.mlab.com:53889/bilibilidata', { useNewUrlParser: true });
+//mongoose.connect( {useNewUrlParser: true}, 'mongodb://bilicrawlerAdmin:addData2018@ds253889.mlab.com:53889/bilibilidata');
 var db = mongoose.connection;
 db.on("error", console.error.bind(console, "connection error"));
 db.once("open", function(callback){
   console.log("Connection Succeeded");
 });
-var schema = require('../models/posts');
+var schema = require('../models/posts'); // in order to use models
 var Post = mongoose.model("Post"),
-    Article = mongoose.model('Article')
+    Article = mongoose.model('Article'),
+    Comment = mongoose.model('Comment')
 
 /*
 app.get('/show',  (req, res) => {
   res.sendFile(path.join(__dirname, '../../client/dist/index.html'))
 })*/
+function format(t){
+  console.log("kkkkkk&& "+ t)
+  return t>9?t:("0"+t);
+}
+
+function myDate() {
+  let date=new Date();
+  let month = format(date.getMonth() + 1),
+      day = format(date.getDate()),
+      h = format(date.getHours()), 
+      min = format(date.getMinutes()),
+      sec = format(date.getSeconds());
+
+  let time = date.getFullYear() + "-" + month + "-" + day + " "+h+":"+min+":"+sec;
+
+  return time;
+}
+  
 
 // Add new post
 app.post('/posts', (req, res) => {
@@ -103,7 +123,7 @@ app.post('/articles', (req, res) => {
   //var db = req.db;
   var title = req.body.title;
   var content = req.body.content;
-  var date = Date();
+  var date = myDate();
   var tags=req.body.tags.split("@");
   var new_post = new Article({
     aid: 8, //todo
@@ -180,4 +200,92 @@ app.put('/articles/:id', (req, res) => {
   })
 })
 
-app.listen(process.env.PORT || 8081)
+// Add a comment
+app.post('/comment', (req, res) => {
+
+  Comment.find({article_id: req.body.article_id}, function (error, cmt) {
+    if (error) { console.error(error); return; }
+    var new_cmt = {
+        username: req.body.username,
+        email: req.body.email,
+        content: req.body.content,
+        dateTime: myDate(),
+        comment_replies: null
+    }
+    
+    if (cmt.length > 0){
+      cmt[0].comment.push(new_cmt)     
+    }else{
+      cmt[0] = new Comment({
+        article_id: req.body.article_id,
+        comment: [new_cmt]
+      })
+
+    }
+    cmt[0].save(function (error) {
+        if (error) {
+          console.log(error)
+        }
+        res.send({
+          success: true,
+          message: 'Added a comment!'
+        })
+    })
+
+  })
+
+})
+
+// Fetch cmts
+app.get('/comment/:id', (req, res) => {
+  Comment.find({article_id: req.params.id}, function (error, cmt) {
+    if (error) { console.error(error); }
+    
+    if (cmt.length > 0){
+      res.send(cmt[0])
+    }
+    else{
+      res.send({comment: []})
+    }
+  })
+})
+
+// Update a art
+app.put('/comment/:id', (req, res) => {
+  Comment.find({article_id: req.params.id}, function (error, cmt) {
+    if (error) { console.error(error); }
+
+    var new_cmt = {
+      reply_username: req.body.reply_username,
+      reply_email: req.body.reply_email,
+      reply_to: req.body.reply_to,
+      reply_content: req.body.reply_content,     
+      reply_dateTime: myDate()
+    }
+     
+    var comments = cmt[0].comment;
+    for(let i=0;i<comments.length; i++ ){
+     console.log( JSON.stringify(comments[i]))
+      if(comments[i]._id == req.body.parentId){
+        console.log( req.body.parentId+"##########3")
+        if(comments[i].comment_replies === null){
+          comments[i].comment_replies = [new_cmt]
+        }
+        else
+          comments[i].comment_replies.push(new_cmt);
+        break;
+      }
+    }
+    cmt[0].save(function (error) {
+      if (error) {
+        console.log(error)
+      }
+      res.send({
+        success: true,
+        message: 'Added a reply!'
+      })
+    }) 
+  })
+})
+
+app.listen(process.env.PORT || 8082)
