@@ -5,8 +5,11 @@
     </div>
     <!--img src="../assets/logo.png"-->
 
-    <h3 align="center" >---------------------------------------------POSTS--------------------------------------------</h3>
-   
+    <div class="posts">
+        <span class="line"></span>
+        <span class="txt">POSTS</span>
+        <span class="line"></span>
+    </div>
     <div v-if="posts.length > 0" class="table-wrap">
       <div>
         <router-link v-bind:to="{ name: 'NewArticle' }" class="">Add article</router-link>
@@ -17,7 +20,7 @@
           <router-link v-bind:to="{ name: 'ShowArticle', params: { id: post._id } }">
             <td><u>{{ post.title}}</u></td>
           </router-link>
-          {{" (" + post.date.split("-")[2] +" " + month[post.date.split("-")[1]] + ", "+ post.date.split("-")[0] +")"}}
+          {{" (" + month[post.date.split("-")[1]] + " "+ post.date.split("-")[0] +")"}}
          
           <div style="float:right; text-align:right">
             <router-link v-bind:to="{ name: 'EditArticle', params: { id: post._id } }">Edit</router-link> |
@@ -32,18 +35,23 @@
       There are no posts.. Lets add one now <br /><br />
       <router-link v-bind:to="{ name: 'NewArticle' }" class="add_post_link">Add Post</router-link>
     </div>
- 
 
+
+    <div class="footer">
+      <my-footer></my-footer>
+    </div>
   </div>
 </template>
 
 <script>
 import myheader from './MyHeader';
+import myFooter from './MyFooter';
 import ArticleService from '@/services/ArticleService'
 export default {
   name: 'posts',
   components: {
-    MyHeader: myheader
+    MyHeader: myheader,
+    MyFooter: myFooter
   },
   data () {
     return {
@@ -58,9 +66,10 @@ export default {
     async getPosts () {
       const response = await ArticleService.fetchArticles()
       this.posts = response.data.posts
+      /*
       for(let i=0; i < this.posts.length; i++){
         this.posts[i].date = this.posts[i].date.split(" ")[0]
-      }
+      }*/
     },
     async deletePost (id) {
       await ArticleService.deleteArticle(id)
@@ -72,9 +81,9 @@ export default {
 </script>
 <style type="text/css">
 .table-wrap {
-  width: 50%;
+  max-width: 420px;  
   margin: 0 auto;
-  text-align: center;
+  text-align: left;
   font-size: 14px;
 }
 table th, table tr {
@@ -103,6 +112,22 @@ a.add_post_link {
 }
 .fmttr {
    width: 100%;
+}
+
+.posts {
+  width: 100%;
+  text-align: center;
+}
+ .posts .line {
+  display: inline-block;
+  width: 280px;
+  border-top: 1px solid #ccc ;
+}
+.posts .txt {
+  font-size: 14px;
+  font-weight: bold;
+  color: #999999;
+  vertical-align: sub;
 }
 
 </style>
