@@ -11,7 +11,6 @@ app.use(cors())
 app.use(express.static(path.join(__dirname, '../../client/dist')))
 var mongoose = require('mongoose');
 mongoose.connect('mongodb://bilicrawlerAdmin:addData2018@ds253889.mlab.com:53889/bilibilidata', { useNewUrlParser: true });
-//mongoose.connect( {useNewUrlParser: true}, 'mongodb://bilicrawlerAdmin:addData2018@ds253889.mlab.com:53889/bilibilidata');
 var db = mongoose.connection;
 db.on("error", console.error.bind(console, "connection error"));
 db.once("open", function(callback){
@@ -20,7 +19,23 @@ db.once("open", function(callback){
 var schema = require('../models/posts'); // in order to use models
 var Post = mongoose.model("Post"),
     Article = mongoose.model('Article'),
-    Comment = mongoose.model('Comment')
+    Comment = mongoose.model('Comment');
+
+// var http = require('http');
+// var server = http.createServer(app);
+
+/* view for single art
+   view for edit art
+*/
+app.get('/article/:id', (req, res) => {
+  res.sendFile(path.join(__dirname, '../../client/dist/index.html'));
+})
+
+app.get('/editArticle/:id', (req, res) => {
+  res.sendFile(path.join(__dirname, '../../client/dist/index.html'));
+})
+
+
 
 /*
 app.get('/show',  (req, res) => {
@@ -119,7 +134,7 @@ app.delete('/posts/:id', (req, res) => {
 })
 
 // Add new article
-app.post('/articles', (req, res) => {
+app.post('/articles-api', (req, res) => {
   //var db = req.db;
   var title = req.body.title;
   var content = req.body.content;
@@ -147,7 +162,7 @@ app.post('/articles', (req, res) => {
 })
 
 // Fetch all art
-app.get('/articles', (req, res) => {
+app.get('/articles-api', (req, res) => {
   Article.find({}, function (error, posts) {
     if (error) { console.error(error); }
     res.send({
@@ -157,7 +172,7 @@ app.get('/articles', (req, res) => {
 })
 
 // Fetch single art
-app.get('/articles/:id', (req, res) => {
+app.get('/articles-api/:id', (req, res) => {
   var db = req.db;
   Article.findById(req.params.id, function (error, post) {
     if (error) { console.error(error); }
@@ -166,7 +181,7 @@ app.get('/articles/:id', (req, res) => {
 })
 
 // Delete a article
-app.delete('/articles/:id', (req, res) => {
+app.delete('/articles-api/:id', (req, res) => {
   Article.remove({
     _id: req.params.id
   }, function(err, post){
@@ -179,7 +194,7 @@ app.delete('/articles/:id', (req, res) => {
 })
 
 // Update a art
-app.put('/articles/:id', (req, res) => {
+app.put('/articles-api/:id', (req, res) => {
   var db = req.db;
   Article.findById(req.body.id, function (error, post) { //#params
     if (error) { console.error(error); }
@@ -201,7 +216,7 @@ app.put('/articles/:id', (req, res) => {
 })
 
 // Add a comment
-app.post('/comment', (req, res) => {
+app.post('/comment-api', (req, res) => {
 
   Comment.find({article_id: req.body.article_id}, function (error, cmt) {
     if (error) { console.error(error); return; }
@@ -237,7 +252,7 @@ app.post('/comment', (req, res) => {
 })
 
 // Fetch cmts
-app.get('/comment/:id', (req, res) => {
+app.get('/comment-api/:id', (req, res) => {
   Comment.find({article_id: req.params.id}, function (error, cmt) {
     if (error) { console.error(error); }
     
@@ -251,7 +266,7 @@ app.get('/comment/:id', (req, res) => {
 })
 
 // Update a art
-app.put('/comment/:id', (req, res) => {
+app.put('/comment-api/:id', (req, res) => {
   Comment.find({article_id: req.params.id}, function (error, cmt) {
     if (error) { console.error(error); }
 

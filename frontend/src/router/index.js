@@ -7,8 +7,11 @@ import NewPost from '@/components/NewPost'
 import EditPost from '@/components/EditPost'
 import ShowArticle from '@/components/ShowArticle'
 import EditArticle from '@/components/EditArticle'
+//import mavonEditor from 'mavon-editor'
+//import 'mavon-editor/dist/css/index.css'
 
 Vue.use(Router)
+//Vue.use(mavonEditor)
 
 export default new Router({
   mode: 'history',
@@ -44,7 +47,7 @@ export default new Router({
       component: ShowArticle
     },
     {
-      path: '/articles/:id',
+      path: '/editArticle/:id',
       name: 'EditArticle',
       component: EditArticle
     }

@@ -1,45 +1,41 @@
 <template>
-  <div id="posts">
+  <div class="homepage">
     <div class="header">
       <my-header></my-header>
     </div>
-    <!--img src="../assets/logo.png"-->
 
-    <div class="posts">
-        <span class="line"></span>
-        <span class="txt">POSTS</span>
-        <span class="line"></span>
-    </div>
-    <div v-if="posts.length > 0" class="table-wrap">
-      <div>
+    <p class="line-title">
+         <span class="line"></span><span class="title">posts</span>
+    </p>
+    <div>
         <router-link v-bind:to="{ name: 'NewArticle' }" class="">Add article</router-link>
-      </div>
-      <table align="left" class="fmttr">
-        <tr v-for="post in posts">
+    </div>
+
+    <div v-if="posts.length > 0">
+      <ul class="posts-list">
+        <li v-for="post in posts">
           
-          <router-link v-bind:to="{ name: 'ShowArticle', params: { id: post._id } }">
-            <td><u>{{ post.title}}</u></td>
+          <router-link class="title" v-bind:to="{ name: 'ShowArticle', params: { id: post._id } }">
+            <a>{{ post.title}}</a>
           </router-link>
-          {{" (" + month[post.date.split("-")[1]] + " "+ post.date.split("-")[0] +")"}}
+          <span class="createTime">{{" (" + month[post.date.split("-")[1]] + " "+ post.date.split("-")[0] +")"}}</span>
          
           <div style="float:right; text-align:right">
             <router-link v-bind:to="{ name: 'EditArticle', params: { id: post._id } }">Edit</router-link> |
             <a href="#" @click="deletePost(post._id)">Delete</a>
           </div>
-          
-          </td>
-        </tr>
-      </table>
+        </li>
+              
+      </ul>
     </div>
     <div v-else>
-      There are no posts.. Lets add one now <br /><br />
-      <router-link v-bind:to="{ name: 'NewArticle' }" class="add_post_link">Add Post</router-link>
-    </div>
-
+      Loading... <br />
+    </div>    
 
     <div class="footer">
       <my-footer></my-footer>
     </div>
+    <div class="background"></div>
   </div>
 </template>
 
@@ -79,11 +75,11 @@ export default {
   }
 }
 </script>
-<style type="text/css">
+<style scoped>
 .table-wrap {
-  max-width: 420px;  
+  width: 50%;
   margin: 0 auto;
-  text-align: left;
+  text-align: center;
   font-size: 14px;
 }
 table th, table tr {
@@ -130,4 +126,73 @@ a.add_post_link {
   vertical-align: sub;
 }
 
+
+.homepage {
+  height: 100%;
+  padding: 0 10px;   
+  max-width: 640px;
+  margin: 0 auto;
+}
+   
+.posts-list {
+  margin-bottom: 30px;
+  padding: 0 10px;
+  list-style: none;
+            
+}
+.posts-list li {
+  font-size: 14px;
+  text-align: left;
+  margin-bottom: 10px;
+  word-break: break-all; 
+  word-wrap: break-word;              
+}
+.title {
+  color: #132051;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.createTime {
+  font-size: 12px;
+}
+.line-title {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.line-title .title {
+  text-decoration: none;
+  text-transform: uppercase;
+  font-weight: bold;
+  font-size: 13px;
+  top: 0px;
+  padding: 0 10px;
+  color: #999;
+  background-color: white;
+}
+.line-title .title::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  z-index: -1;
+  width: 100%;
+  height: 1px;
+  background-color: #999;
+}
+
+.background {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  background: url("../assets/posts.png") no-repeat fixed top;
+  background-size: cover;
+  opacity: 0.2;
+  filter: blur(3px);
+}
 </style>

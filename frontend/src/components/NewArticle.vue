@@ -31,6 +31,7 @@ export default {
   },
   methods: {
     async addArticle() {
+      this.content = this.content.replace(/\n/gm,"  \n"); // since markdown need 2 whitespace to start a new line, so I auto add it
       await ArticleService.addArticle({
         title: this.title,
         tags: this.tags,

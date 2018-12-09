@@ -1,24 +1,23 @@
 <template>
-  <div id="articles">
+  <div class="article-page">
     <div class="header">
       <my-header></my-header>
     </div>
-      <h2 align="left" class="post-content">{{title}}</h2>
+
+    <h2 align="left">{{title}}</h2>
      
-        <div align="left" class="post-content">{{date}}</div>        
-        <div v-if="tags != null">
-          <div align="left" class="post-content">
-               <tr>Tags:&nbsp;<td v-for="tag in tags">{{tag}} &nbsp;</td> </tr>
-          </div> 
-        </div>
-        <!--div align="left" class="post-content" v-html="content"></div-->     
-        <div class="post-content"><p v-html="compiledMarkdown" v-highlight> </p> </div>
+    <div class="createTime">{{date}}</div>        
+    <div v-if="tags != null" align="left">
+      <tr>Tags:&nbsp;<td v-for="tag in tags">{{tag}} &nbsp;</td></tr>  
+    </div>
+
+    <div class="post-content"><p v-html="compiledMarkdown" v-highlight> </p> </div>
          
    
-      <div align="left" class="comments">
-        <h3>COMMENTS</h3>        
+    <div align="left" class="comments">
+              
         <div v-if="comments.length>0">
-          
+          <h3>Response({{comments.length}})</h3>  
             <div v-for="item in comments">
               <table class="table">
                 <br>
@@ -60,7 +59,7 @@
           
         </div>
         <div v-else>暂无评论，我来发表第一篇评论！</div>
-      </div>
+    </div>
 
       <div align="left" id="cmtbox" class="commentBox">
         <h3>发表评论</h3>
@@ -78,10 +77,15 @@
             
           </td>      
         </tr>        
-        <textarea rows="6" placeholder="Leave a comment" v-model="commentText"></textarea>
-        <div style="float:right">
-          <button class="btn" @click="addComment">Post&nbsp;</button>          
+        <textarea rows="6" placeholder="Leave a response" @input="autoNewline" v-model="commentText"></textarea>
+        <div v-if="preview != false && commentText != ''" class=“post-content”>
+          <p v-html="marked(commentText)" v-highlight></p>
         </div>
+        <a class="mdtips"  @click="mdpreview()">Preview<span> << Markdown is supported</span></a>
+          <div style="float:right">
+             <button class="btn" @click="addComment">Post&nbsp;</button>          
+          </div>
+        
       </div>
       <p><br><br></p>
 
@@ -130,7 +134,8 @@ export default {
       commentReplyTo: '',
       comments: [],
       parentId: '',
-      cmptReply: ''
+      cmptReply: '',
+      preview: false
     }
   },
   computed: {
@@ -147,6 +152,12 @@ export default {
     marked: function (x) {
       return marked(x)
     },
+    mdpreview: function(){      
+      this.preview = !this.preview;
+    },
+    autoNewline: function(){
+      this.commentText = this.commentText.replace(/\n/gm,"  \n");// since markdown need 2 whitespace to start a new line, so I auto add it
+    },
     async getPost () {
       const response = await ArticleService.getArticle({
         id: this.$route.params.id
@@ -156,7 +167,7 @@ export default {
       this.date= response.data.date
       this.tags = response.data.tags;
       
-      console.log('快看快看酷酷酷'+JSON.stringify(response.data.date))
+      //console.log('快看快看'+JSON.stringify(response.data.date))
       if(this.tags[0]=="")
         this.tags = null
     },
@@ -206,41 +217,45 @@ export default {
 
 
 </script>
-<style type="text/css">
-.btn {
-  width: 90%;
+<style scoped>
+.article-page {
+  padding: 0 10px;   
+  max-width: 640px;
+  margin: 0 auto;
 }
-.form div {
-  margin: 20px;
+.createTime {
+  text-align: left;
+  font-size: 13px;
+  color: #888888;
+  margin-bottom: 10px;
 }
+
+
 .post-content {
   text-align: justify;
-  width: calc(100% - 20px);
   word-break: break-all; 
   word-wrap: break-word;
   margin: 0 auto;
   margin-bottom: 20px;
 }
 .commentBox {
-  width: 56%;
   margin: 0 auto;
   margin-bottom: 20px;
 }
 .commentBox input{
-  width: 50%;
   padding: 4px;
   margin-bottom: 1px;
 }
 .commentBox textarea {
-  width: 97%;
+  width: 98%;
   padding: 6px;
   border: 1px solid #e0dede;
   outline-color: #ff00ff;
   font-size: 14px;
 }
 .comments {
-  width: 56%;
   margin: 0 auto;
+  margin-top: 40px;
   margin-bottom: 20px;
 }
 .comments-rpl {
@@ -251,7 +266,7 @@ export default {
   margin-bottom: 0px;
 }
 .table {
-  width: 97%;
+  width: 100%;
   word-break: break-all; 
   word-wrap: break-word;
   border-top:solid 1px #f00;
@@ -259,7 +274,8 @@ export default {
   border-left:solid 0px #00f;
   border-right:0px solid red;
 }
-.table-rpl {margin:0 auto;
+.table-rpl {
+  margin:0 auto;
   width: 97%;
   background: #fff;
   word-break: break-all; 
@@ -301,11 +317,18 @@ a {
 .delt{
   color: red;
 }
-@media (max-width: 420px) {
-        ul.links li img {
-            left: auto!important;
-            right: 0!important;
-        }
-    }
+
+.mdtips:hover span{
+  display:block; 
+  position:absolute; 
+  top:21px; 
+  left:9px; 
+  width:15em; 
+  border:1px solid black; 
+  background-color:#ccFFFF; 
+  padding: 3px; 
+  color:black;
+}
+
 </style>
 
