@@ -10,10 +10,8 @@
     <div v-if="tags != null" align="left">
       <tr>Tags:&nbsp;<td v-for="tag in tags">{{tag}} &nbsp;</td></tr>  
     </div>
-
-    <div class="post-content"><p v-html="compiledMarkdown" v-highlight> </p> </div>
-         
-   
+    <p v-highlight class="post-content" v-html="compiledMarkdown"></p>
+  
     <div align="left" class="comments">
               
         <div v-if="comments.length>0">
@@ -23,7 +21,7 @@
                 <br>
                 <font color="#4682B4"><b>{{item.username}}</b></font>:&nbsp;
                 <tr class="test">
-                  <p class="rpl-content" v-html="marked(item.content)" v-highlight></p>
+                  <p v-highlight class="rpl-content" v-html="marked(item.content)"></p>
                 </tr>
                 <div class="comments-rpl" v-if="item.comment_replies != null">
                   <br> 
@@ -33,7 +31,7 @@
                         <font color="#4682B4"><b>{{reply.reply_username}}</b></font>
                         &nbsp;reply to <font color="#4682B4"><b>{{reply.reply_to}}</b></font>:
                         <tr class="test">
-                        <td class="rpl-content" v-html="marked(reply.reply_content)" v-highlight></td>
+                        <td v-highlight class="rpl-content" v-html="marked(reply.reply_content)"></td>
                         </tr>
                       
                       <div class="timerpl">
@@ -58,11 +56,12 @@
             </div>
           
         </div>
-        <div v-else>暂无评论，我来发表第一篇评论！</div>
+        <div v-else><br />No response yet, leave the first response.</div>
     </div>
 
       <div align="left" id="cmtbox" class="commentBox">
         <h3>发表评论</h3>
+        
         <tr>
           <td>
             NAME <input type="text" name="commentUsername" placeholder="Your Name" v-model="commentUsername">
@@ -73,21 +72,19 @@
           <td>
             <div v-if="this.commentReplyTo !== ''"> 
               @{{this.commentReplyTo}} <a href="#cmtbox" @click="resetComment" class="delt">X</a>
-            </div>
-            
+            </div>            
           </td>      
         </tr>        
         <textarea rows="6" placeholder="Leave a response" @input="autoNewline" v-model="commentText"></textarea>
-        <div v-if="preview != false && commentText != ''" class=“post-content”>
-          <p v-html="marked(commentText)" v-highlight></p>
+        <div v-if="preview != false" class=“post-content”>
+          <p v-highlight v-html="marked(commentText)"></p>
         </div>
-        <a class="mdtips"  @click="mdpreview()">Preview<span> << Markdown is supported</span></a>
+        <a href="#cmtbox"  @click="mdpreview()">Preview  (Markdown is supported)</a>
           <div style="float:right">
              <button class="btn" @click="addComment">Post&nbsp;</button>          
           </div>
         
       </div>
-      <p><br><br></p>
 
     <div class="footer">
       <my-footer></my-footer>
@@ -100,7 +97,9 @@ import myheader from './MyHeader';
 import myFooter from './MyFooter';
 import ArticleService from '@/services/ArticleService'
 import marked from 'marked'
-import highlight from 'highlight.js'
+
+// import hljs from 'highlight.js';
+
 
 
 var rendererMD = new marked.Renderer()
@@ -156,7 +155,8 @@ export default {
       this.preview = !this.preview;
     },
     autoNewline: function(){
-      this.commentText = this.commentText.replace(/\n/gm,"  \n");// since markdown need 2 whitespace to start a new line, so I auto add it
+      // since markdown need 2 whitespace to start a new line, so I auto add it
+      this.commentText = this.commentText.replace(/\n$/i,"  \n");       
     },
     async getPost () {
       const response = await ArticleService.getArticle({
@@ -312,23 +312,13 @@ export default {
 }
 a {
   color: #132051;
-  text-decoration: none;
 }
+a:hover {color:#CC3300;text-decoration:none;}
 .delt{
   color: red;
 }
 
-.mdtips:hover span{
-  display:block; 
-  position:absolute; 
-  top:21px; 
-  left:9px; 
-  width:15em; 
-  border:1px solid black; 
-  background-color:#ccFFFF; 
-  padding: 3px; 
-  color:black;
-}
+
 
 </style>
 

@@ -1,17 +1,23 @@
 import Vue from 'vue'
 import Router from 'vue-router'
-import Hello from '@/components/HelloWorld'
 import NewArticle from '@/components/NewArticle'
 import Posts from '@/components/Posts'
 import NewPost from '@/components/NewPost'
 import EditPost from '@/components/EditPost'
 import ShowArticle from '@/components/ShowArticle'
 import EditArticle from '@/components/EditArticle'
-//import mavonEditor from 'mavon-editor'
-//import 'mavon-editor/dist/css/index.css'
+
+Vue.directive('highlight',{
+  update: function (el) {  
+  let blocks = el.querySelectorAll('pre code');
+      blocks.forEach((block)=>{
+        hljs.highlightBlock(block)
+      })
+  }
+})
+
 
 Vue.use(Router)
-//Vue.use(mavonEditor)
 
 export default new Router({
   mode: 'history',

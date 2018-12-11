@@ -5,12 +5,6 @@
         </p>
         <div class="links">
             <font color="black">Github: </font><a href="https://github.com/yxie233"><u>yxie233</u></a>
-            <br>
-            <font color="#1874CD">Facebook: </font><a href="https://github.com/yxie233"><u>@yiyun xie</u></a>
-            <br>
-            <font color="red">Linkedin: </font><a href="https://github.com/yxie233"><u>@yiyun xie</u></a>
-            <br>
-            <font color="#228B22">Email: </font><a href="https://github.com/yxie233"><u>xiey233@gmail.com</u></a>
         </div>
         <p>©2018-2019</p>
     </footer>

@@ -38,11 +38,11 @@ export default {
         id: this.$route.params.id
       })
       this.title = response.data.title,
-      this.content = response.data.content.replace(/\n/gm,"<br/>"),
+      this.content = response.data.content,
       this.tags = response.data.tags
     },
     async updatePost () {
-      this.content = this.content.replace(/\n/gm,"  \n"); // since markdown need 2 whitespace to start a new line, so I auto add it
+      this.content = this.content.replace(/\n$/i,"  \n"); // since markdown need 2 whitespace to start a new line, so I auto add it
       await ArticleService.updateArticle({
         id: this.$route.params.id,
         title: this.title,
