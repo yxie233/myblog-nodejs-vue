@@ -3,46 +3,107 @@ const bodyParser = require('body-parser')
 const cors = require('cors')
 const morgan = require('morgan')
 const path = require('path')
+const cookieSession = require('cookie-session')
 
 const app = express()
 app.use(morgan('combined'))
 app.use(bodyParser.json())
 app.use(cors())
-app.use(express.static(path.join(__dirname, '../../client/dist')))
+
+const viewsRoot = path.join(__dirname, '../../client/dist');
+app.use(express.static(viewsRoot))
+
+app.use(cookieSession({
+  name: 'mysession',
+  keys: ['myrandomkey'],
+  maxAge: 24 * 60 * 60 * 1000 // 24 hours 
+}))
+
 var mongoose = require('mongoose');
 mongoose.connect('mongodb://bilicrawlerAdmin:addData2018@ds253889.mlab.com:53889/bilibilidata', { useNewUrlParser: true });
 var db = mongoose.connection;
 db.on("error", console.error.bind(console, "connection error"));
 db.once("open", function(callback){
-  console.log("Connection Succeeded");
+  console.log("db Connection Succeeded");
 });
 var schema = require('../models/posts'); // in order to use models
 var Post = mongoose.model("Post"),
     Article = mongoose.model('Article'),
-    Comment = mongoose.model('Comment');
+    Comment = mongoose.model('Comment'),
+    Admin = mongoose.model('Admin');
 
-// var http = require('http');
-// var server = http.createServer(app);
+///////////////---------
+const passport = require('passport');
+// import our passport functions
+require("../authentication/passport.js")(passport, Admin);
 
-/* view for single art
-   view for edit art
+app.use(passport.initialize());
+app.use(passport.session());
+
+app.post('/api/login', function(req, res, next) {
+  console.log('in login');
+  passport.authenticate('local', (err, user, info) => {
+    if (err) {
+        return next(err);
+    }    
+    if (!user) {
+      console.log('You is not a user..or you are messed up');    
+      res.status(401).send('You are not authenticated')
+    }
+
+    req.login(user, (err) => {
+      if(err){
+        return next(err);
+      }
+      res.send("Logged in")
+      // return res.status(200).send('ok');
+    })    
+  })(req, res, next)
+});
+
+app.get('/api/logout', function(req, res){
+  req.logout();
+  console.log("logged out!!!!!!")
+  return res.send();
+});
+
+
+const myAuthenticate = (req, res, next) => {
+  if (!req.isAuthenticated()) {
+      res.status(401).send('You are not authenticated')
+  } else {
+      return next()
+  }
+}
+
+app.get("/api/checklogin", (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.send('no')
+  } else {
+    res.send('ok')
+  }
+})
+
+
+
+//////////////-----
+
+
+/* send static pages 
 */
-app.get('/article/:id', (req, res) => {
-  res.sendFile(path.join(__dirname, '../../client/dist/index.html'));
-})
+app.get('*', function (req, res, next) {
+  // console.log("kkkk: "+ req.originalUrl.indexOf('/article'))
+  if(req.originalUrl.indexOf('/article')==0 || req.originalUrl.indexOf('/editArticle')==0 
+    ||req.originalUrl.indexOf('/login')==0 || req.originalUrl.indexOf('/admin')==0) {
+      res.sendFile("index.html", { root: viewsRoot })
+  }else{
+      next();
+  }
+});
 
-app.get('/editArticle/:id', (req, res) => {
-  res.sendFile(path.join(__dirname, '../../client/dist/index.html'));
-})
 
-
-
-/*
-app.get('/show',  (req, res) => {
-  res.sendFile(path.join(__dirname, '../../client/dist/index.html'))
-})*/
 function format(t){
-  console.log("kkkkkk&& "+ t)
+  // console.log("kkkkkk&& "+ t)
   return t>9?t:("0"+t);
 }
 
@@ -121,7 +182,6 @@ app.put('/posts/:id', (req, res) => {
 
 // Delete a post
 app.delete('/posts/:id', (req, res) => {
-  var db = req.db;
   Post.remove({
     _id: req.params.id
   }, function(err, post){
@@ -131,11 +191,12 @@ app.delete('/posts/:id', (req, res) => {
       success: true
     })
   })
+
 })
 
 // Add new article
-app.post('/articles-api', (req, res) => {
-  //var db = req.db;
+app.post('/api/articles', (req, res) => {
+
   var title = req.body.title;
   var content = req.body.content;
   var date = myDate();
@@ -147,7 +208,8 @@ app.post('/articles-api', (req, res) => {
     tags: tags,
     date: date,
     isPublish: true,
-    comment_n: 0  
+    comment_n: 0,
+    page_view: 0
   })
 
   new_post.save(function (error) {
@@ -162,7 +224,7 @@ app.post('/articles-api', (req, res) => {
 })
 
 // Fetch all art
-app.get('/articles-api', (req, res) => {
+app.get('/api/articles', (req, res) => {
   Article.find({}, function (error, posts) {
     if (error) { console.error(error); }
     res.send({
@@ -172,18 +234,26 @@ app.get('/articles-api', (req, res) => {
 })
 
 // Fetch single art
-app.get('/articles-api/:id', (req, res) => {
-  var db = req.db;
+app.get('/api/articles/:id', (req, res) => {
   Article.findById(req.params.id, function (error, post) {
     if (error) { console.error(error); }
     res.send(post)
+    post.update({$inc: {'page_view': 1}}).exec();
   })
 })
 
 // Delete a article
-app.delete('/articles-api/:id', (req, res) => {
+app.delete('/api/articles/:id', myAuthenticate, (req, res) => {
   Article.remove({
     _id: req.params.id
+  }, function(err, post){
+    if (err)
+      res.send(err)
+  })
+
+  // also delete its comments
+  Comment.remove({
+    article_id: req.params.id
   }, function(err, post){
     if (err)
       res.send(err)
@@ -194,8 +264,7 @@ app.delete('/articles-api/:id', (req, res) => {
 })
 
 // Update a art
-app.put('/articles-api/:id', (req, res) => {
-  var db = req.db;
+app.put('/api/articles/:id', myAuthenticate, (req, res) => {
   Article.findById(req.body.id, function (error, post) { //#params
     if (error) { console.error(error); }
 
@@ -216,7 +285,7 @@ app.put('/articles-api/:id', (req, res) => {
 })
 
 // Add a comment
-app.post('/comment-api', (req, res) => {
+app.post('/api/comment', (req, res) => {
 
   Comment.find({article_id: req.body.article_id}, function (error, cmt) {
     if (error) { console.error(error); return; }
@@ -225,14 +294,16 @@ app.post('/comment-api', (req, res) => {
         email: req.body.email,
         content: req.body.content,
         dateTime: myDate(),
-        comment_replies: null
+        comment_replies: null      
     }
     
     if (cmt.length > 0){
-      cmt[0].comment.push(new_cmt)     
+      cmt[0].comment_num = cmt[0].comment_num+1;
+      cmt[0].comment.push(new_cmt);  
     }else{
       cmt[0] = new Comment({
         article_id: req.body.article_id,
+        comment_num: 1,
         comment: [new_cmt]
       })
 
@@ -252,7 +323,7 @@ app.post('/comment-api', (req, res) => {
 })
 
 // Fetch cmts
-app.get('/comment-api/:id', (req, res) => {
+app.get('/api/comment/:id', (req, res) => {
   Comment.find({article_id: req.params.id}, function (error, cmt) {
     if (error) { console.error(error); }
     
@@ -265,8 +336,8 @@ app.get('/comment-api/:id', (req, res) => {
   })
 })
 
-// Update a art
-app.put('/comment-api/:id', (req, res) => {
+// Update add a cmt
+app.put('/api/comment/:id', (req, res) => {
   Comment.find({article_id: req.params.id}, function (error, cmt) {
     if (error) { console.error(error); }
 
@@ -279,10 +350,11 @@ app.put('/comment-api/:id', (req, res) => {
     }
      
     var comments = cmt[0].comment;
+    cmt[0].comment_num = cmt[0].comment_num+1; // increase cmt number count
     for(let i=0;i<comments.length; i++ ){
-     console.log( JSON.stringify(comments[i]))
+    //  console.log( JSON.stringify(comments[i]))
       if(comments[i]._id == req.body.parentId){
-        console.log( req.body.parentId+"##########3")
+        // console.log( req.body.parentId+"##########3")
         if(comments[i].comment_replies === null){
           comments[i].comment_replies = [new_cmt]
         }

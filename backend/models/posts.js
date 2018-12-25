@@ -13,7 +13,7 @@ var ArticleSchema = new Schema({
   tags: [String],
   date: String,
   isPublish: Boolean,
-  comment_num: Number    
+  page_view: Number 
 });
 
 var AidTrackSchema = new Schema({
@@ -22,6 +22,7 @@ var AidTrackSchema = new Schema({
 
 var CommentSchema = new Schema({
   article_id: String,
+  comment_num: Number,
   comment: [
     {
       "username": String,
@@ -41,7 +42,20 @@ var CommentSchema = new Schema({
   ]  
 });
 
+var AdminSchema = new Schema({
+  username: {
+    type: String,
+    unique: true,
+    required: 'Kindly enter the username'
+  },
+  password: {
+    type: String,
+    required: 'Kindly enter the password'
+  }
+});
+
 module.exports = mongoose.model("Post", PostSchema);
 module.exports = mongoose.model("Article", ArticleSchema);
 module.exports = mongoose.model("AidTrack", AidTrackSchema); 
 module.exports = mongoose.model("Comment", CommentSchema); 
+module.exports = mongoose.model("Admin", AdminSchema); 

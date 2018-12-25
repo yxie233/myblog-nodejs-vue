@@ -6,7 +6,7 @@
 
     <h2 align="left">{{title}}</h2>
      
-    <div class="createTime">{{date}}</div>        
+    <div class="createTime">{{date}} (View:{{pageView}})</div>        
     <div v-if="tags != null" align="left">
       <tr>Tags:&nbsp;<td v-for="tag in tags">{{tag}} &nbsp;</td></tr>  
     </div>
@@ -15,7 +15,7 @@
     <div align="left" class="comments">
               
         <div v-if="comments.length>0">
-          <h3>Response({{comments.length}})</h3>  
+          <h3>Response({{cmtCount}})</h3>  
             <div v-for="item in comments">
               <table class="table">
                 <br>
@@ -56,7 +56,7 @@
             </div>
           
         </div>
-        <div v-else><br />No response yet, leave the first response.</div>
+        <div v-else><br />No response yet, leave the first comment.</div>
     </div>
 
       <div align="left" id="cmtbox" class="commentBox">
@@ -134,7 +134,9 @@ export default {
       comments: [],
       parentId: '',
       cmptReply: '',
-      preview: false
+      preview: false,
+      cmtCount: 0,
+      pageView: 0
     }
   },
   computed: {
@@ -148,6 +150,15 @@ export default {
     this.getComments()     
   },
   methods: {
+    /*getCommentLen(){
+      var len=0;
+      for(var x=0; x<this.comments.length; x++){
+        len++;
+        if(this.comments[x].comment_replies!=null)
+          len=len+this.comments[x].comment_replies.length;        
+      }
+      this.cmtCount = len;
+    },*/
     marked: function (x) {
       return marked(x)
     },
@@ -166,7 +177,7 @@ export default {
       this.content = response.data.content; //response.data.content.replace(/\n/gm,"<br/>")
       this.date= response.data.date
       this.tags = response.data.tags;
-      
+      this.pageView = response.data.page_view;
       //console.log('快看快看'+JSON.stringify(response.data.date))
       if(this.tags[0]=="")
         this.tags = null
@@ -197,7 +208,7 @@ export default {
           reply_content: this.commentText
         })
       }
-      this.getComments() 
+      this.getComments(); 
       this.resetComment() 
       // to do refresh page
     },
@@ -205,8 +216,8 @@ export default {
       const response = await ArticleService.getComments({
         id: this.$route.params.id
       })
-      this.comments = response.data.comment
-      
+      this.comments = response.data.comment;
+      this.cmtCount = response.data.comment_num;
     },
     async replyComment (parentId, name) {
       this.parentId = parentId

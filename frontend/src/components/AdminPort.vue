@@ -4,11 +4,13 @@
       <my-header></my-header>
     </div>
 
-   <router-link class="title" v-bind:to="{ name: 'Login', params:{}}">login</router-link>
-
     <p class="line-title">
          <span class="line"></span><span class="title">posts</span>
     </p>
+    <div>
+        <router-link v-bind:to="{ name: 'NewArticle' }" class=""><u>Add article</u></router-link>
+        &nbsp;<a href="#" @click="logout()"><u>Logout</u></a>
+    </div>
 
     <div v-if="posts.length > 0">
       <ul class="posts-list">
@@ -19,12 +21,16 @@
           </router-link>
           <span class="createTime">{{" (" + month[post.date.split("-")[1]] + " "+ post.date.split("-")[0] +")"}}</span>
          
+          <div style="float:right; text-align:right">
+            <router-link v-bind:to="{ name: 'EditArticle', params: { id: post._id } }">Edit</router-link> |
+            <a href="#" @click="deletePost(post._id)">Delete</a>
+          </div>
         </li>
               
       </ul>
     </div>
     <div v-else>
-      Loading... You may refresh this page<br />
+      Loading... <br />
     </div>    
 
     <div class="footer">
@@ -49,7 +55,18 @@ export default {
       posts: [],
       month: ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'June', 'July', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
     }
-  },
+  },/*
+  created () {
+    this.$http.get('/mysession').then(function(result){
+        if(result.status==200){
+            console.log(result.body);
+            this.user=result.body
+        }
+    }, function(res){
+            console.log('会话失败：'+res.status);
+            this.$router.push('/login');
+    });  
+  },*/
   mounted () {
     this.checkLogin(),
     this.getPosts()
@@ -63,18 +80,36 @@ export default {
         this.posts[i].date = this.posts[i].date.split(" ")[0]
       }*/
     },
+    async deletePost (id) {
+      await ArticleService.deleteArticle(id)
+      this.getPosts()
+      this.$router.push({ name: 'Posts' })
+    },
     async checkLogin () {
-    
       await ArticleService.checkLogin()
         .then((response) => {
-          // console.log(response["data"])
-          if(response["data"]==="ok")
-            this.$router.push({ name: 'AdminPort' })
+          // console.log(response)
+          if(response["data"]==="no")
+            this.$router.push({ name: 'Posts' })
         })
         .catch((errors) => {
-          //  console.log("Post.vue err: "+errors)       
+          console.log(errors)
+          this.$router.push("/")
         })
-    
+    },
+    async logout () {
+      const response = await ArticleService.logout()
+      .then((response) => {
+          // console.log(response)  
+          this.$router.push("/")                  
+      })
+      .catch((errors) => {
+          console.log(errors)          
+      })
+      /*
+      for(let i=0; i < this.posts.length; i++){
+        this.posts[i].date = this.posts[i].date.split(" ")[0]
+      }*/
     }
   }
 }
@@ -110,6 +145,7 @@ a.add_post_link {
   font-size: 12px;
   font-weight: bold;
 }
+a:hover {color:#CC3300;text-decoration:none;}
 .fmttr {
    width: 100%;
 }
