@@ -7,7 +7,6 @@ var PostSchema = new Schema({
 });
 
 var ArticleSchema = new Schema({
-  aid: Number,
   title: String,
   content: String,
   tags: [String],
@@ -54,8 +53,21 @@ var AdminSchema = new Schema({
   }
 });
 
+var TagsSchema = new Schema({
+  tagname: {
+    type: String,
+    unique: true,
+    required: 'Kindly enter the tag'
+  },
+  articles_id: [String]
+});
+
+
+
+
 module.exports = mongoose.model("Post", PostSchema);
 module.exports = mongoose.model("Article", ArticleSchema);
 module.exports = mongoose.model("AidTrack", AidTrackSchema); 
 module.exports = mongoose.model("Comment", CommentSchema); 
 module.exports = mongoose.model("Admin", AdminSchema); 
+module.exports = mongoose.model("Tags", TagsSchema); 

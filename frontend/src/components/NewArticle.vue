@@ -29,6 +29,9 @@ export default {
       content: ''
     }
   },
+  mounted () {
+    this.checkLogin()
+  },
   methods: {
     async addArticle() {
       this.content = this.content.replace(/\n$/i,"  \n"); // since markdown need 2 whitespace to start a new line, so I auto add it
@@ -38,6 +41,18 @@ export default {
         content: this.content
       })
       this.$router.push({ name: 'Posts' })
+    },
+    async checkLogin () {
+      await ArticleService.checkLogin()
+        .then((response) => {
+          // console.log(response)
+          if(response["data"]==="no")
+            this.$router.push({ name: 'Posts' })
+        })
+        .catch((errors) => {
+          console.log(errors)
+          this.$router.push("/")
+        })
     }
   }
 }

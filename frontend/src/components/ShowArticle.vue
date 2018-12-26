@@ -17,41 +17,38 @@
         <div v-if="comments.length>0">
           <h3>Response({{cmtCount}})</h3>  
             <div v-for="item in comments">
-              <table class="table">
-                <br>
-                <font color="#4682B4"><b>{{item.username}}</b></font>:&nbsp;
-                <tr class="test">
-                  <p v-highlight class="rpl-content" v-html="marked(item.content)"></p>
-                </tr>
-                <div class="comments-rpl" v-if="item.comment_replies != null">
-                  <br> 
-                  <table class="table-rpl">
-                    <div class="reply" v-for="reply in item.comment_replies">
-                    
-                        <font color="#4682B4"><b>{{reply.reply_username}}</b></font>
-                        &nbsp;reply to <font color="#4682B4"><b>{{reply.reply_to}}</b></font>:
-                        <tr class="test">
-                        <td v-highlight class="rpl-content" v-html="marked(reply.reply_content)"></td>
-                        </tr>
-                      
-                      <div class="timerpl">
-                        <div style="float:right; text-align:right">
-                          <a href="#cmtbox" @click="replyComment(item._id, reply.reply_username)">Reply</a>
+              <table class="table">        
+                <div class="rpl-names">       
+                  <font color="#4682B4">&nbsp;<b>{{item.username}}</b></font>:
+                </div>
+                <p v-highlight class="rpl-content" v-html="mymarked(item.content)"></p>
+               
+                <div class="comments-rpl" v-if="item.comment_replies != null">    
+                    <div v-for="reply in item.comment_replies">
+                      <div class="rpl-cell">
+                        <div class="rpl-names">
+                          <font color="#4682B4">&nbsp;<b>{{reply.reply_username}}</b></font>
+                          &nbsp;reply to <font color="#4682B4"><b>{{reply.reply_to}}</b></font>:  
                         </div>
-                        <tr >{{reply.reply_dateTime}}</tr><br>
-                      </div>
 
+                        <td v-highlight class="rpl-content" v-html="mymarked(reply.reply_content)"></td>                                         
+                        <div class="timerpl">
+                          <div style="float:right; text-align:right">
+                            <a href="#cmtbox" @click="replyComment(item._id, reply.reply_username)">Reply</a>&nbsp;
+                          </div>
+                          <tr >{{reply.reply_dateTime}}</tr>
+                        </div>
+                      </div>
                     </div>
-                  </table>
                 </div>
 
                 <div class="timerpl">
-                  <br><span>{{item.dateTime}}</span>
+                  <br><span>&nbsp;{{item.dateTime}}</span>
                   <div style="float:right; text-align:right">
-                    <a href="#cmtbox" @click="replyComment(item._id, item.username)">Reply</a>
+                    <a href="#cmtbox" @click="replyComment(item._id, item.username)">Reply</a>&nbsp;
                   </div>
                 </div>
-                <br>
+               
               </table>
             </div>
           
@@ -60,7 +57,7 @@
     </div>
 
       <div align="left" id="cmtbox" class="commentBox">
-        <h3>发表评论</h3>
+        <h3>Add Comments</h3>
         
         <tr>
           <td>
@@ -74,10 +71,11 @@
               @{{this.commentReplyTo}} <a href="#cmtbox" @click="resetComment" class="delt">X</a>
             </div>            
           </td>      
-        </tr>        
+        </tr>   
+        <div v-if="this.warning !== ''">{{this.warning}}</div>
         <textarea rows="6" placeholder="Leave a response" @input="autoNewline" v-model="commentText"></textarea>
         <div v-if="preview != false" class=“post-content”>
-          <p v-highlight v-html="marked(commentText)"></p>
+          <p v-highlight v-html="mymarked(commentText)"></p>
         </div>
         <a href="#cmtbox"  @click="mdpreview()">Preview  (Markdown is supported)</a>
           <div style="float:right">
@@ -97,9 +95,6 @@ import myheader from './MyHeader';
 import myFooter from './MyFooter';
 import ArticleService from '@/services/ArticleService'
 import marked from 'marked'
-
-// import hljs from 'highlight.js';
-
 
 
 var rendererMD = new marked.Renderer()
@@ -136,13 +131,21 @@ export default {
       cmptReply: '',
       preview: false,
       cmtCount: 0,
-      pageView: 0
+      pageView: 0,
+      warning: ''
     }
   },
   computed: {
     compiledMarkdown: function () {
       return marked(this.content)
-    }
+    }/*,
+    commentMD: function () {
+      
+      for (let i = 0; i < this.comments.length; i++) {
+                this.comments[i].md = marked(this.comments[i].content);
+      }
+      return this.comments;
+    }*/
   },
   mounted () {
     window.scroll(0, 0),
@@ -150,16 +153,7 @@ export default {
     this.getComments()     
   },
   methods: {
-    /*getCommentLen(){
-      var len=0;
-      for(var x=0; x<this.comments.length; x++){
-        len++;
-        if(this.comments[x].comment_replies!=null)
-          len=len+this.comments[x].comment_replies.length;        
-      }
-      this.cmtCount = len;
-    },*/
-    marked: function (x) {
+    mymarked: function (x) {
       return marked(x)
     },
     mdpreview: function(){      
@@ -179,7 +173,7 @@ export default {
       this.tags = response.data.tags;
       this.pageView = response.data.page_view;
       //console.log('快看快看'+JSON.stringify(response.data.date))
-      if(this.tags[0]=="")
+      if(this.tags!== null && this.tags[0]=="")
         this.tags = null
     },
     resetComment () {
@@ -190,6 +184,23 @@ export default {
       this.parentId = ''
     },
     async addComment () {
+      // check format of comment information
+      if(this.commentUsername === ''){
+        this.warning='NAME cannot be empty!';
+        return;
+      }else if(this.commentText === ''){
+        this.warning='Response cannot be empty!'
+        return;
+      }else{        
+        let emailMatch = /^([a-zA-Z0-9_\.\-])+\@(([a-zA-Z0-9\-])+\.)+([a-zA-Z0-9]{2,4})+$/;
+        if (!emailMatch.test(this.commentEmail))
+        // this.warning=""+emailMatch.matches();
+		    {
+          this.warning = 'Invalid EMAIL!'
+          return;
+        }else{this.warning = ''} 
+      }
+
       if(this.parentId === ''){
         const response = await ArticleService.addComment({
           article_id: this.$route.params.id,
@@ -241,7 +252,6 @@ export default {
   margin-bottom: 10px;
 }
 
-
 .post-content {
   text-align: justify;
   word-break: break-all; 
@@ -266,11 +276,10 @@ export default {
 }
 .comments {
   margin: 0 auto;
-  margin-top: 40px;
-  margin-bottom: 20px;
+  margin-top: 40px;  
 }
 .comments-rpl {
-  width: 80%;
+  width: 85%;
   word-break: break-all; 
   word-wrap: break-word;
   margin: 0 auto;
@@ -278,48 +287,44 @@ export default {
 }
 .table {
   width: 100%;
+  margin-top: 2px;
   word-break: break-all; 
   word-wrap: break-word;
-  border-top:solid 1px #f00;
-  border-bottom:solid 0px #0f0;
-  border-left:solid 0px #00f;
-  border-right:0px solid red;
+  border-top:solid 1px #104E8B;
+  border-bottom:solid 1px #104E8B;
+  border-left:solid 1px #104E8B;
+  border-right:solid 1px #104E8B;
 }
-.table-rpl {
+.rpl-names {
   margin:0 auto;
+  background: #AEEEEE;
+}
+.rpl-cell{
+  margin-top: 2px;
   width: 97%;
-  background: #fff;
   word-break: break-all; 
   word-wrap: break-word;
-  border-top:solid 1px #4F94CD;
-  border-bottom:solid 1px #4F94CD;
-  border-left:solid 0px #00f;
-  border-right:0px #0f0;
-}
-.reply{
-  align-items: center;
-  margin:0 auto;
-  word-break: break-all; 
-  word-wrap: break-word;
+  border-top:solid 1px #104E8B;
+  border-bottom:solid 1px #104E8B;
+  border-left:solid 1px #104E8B;
+  border-right:solid 1px #104E8B;
 }
 .rpl-content {
   margin:0 auto;
-  width: 50%;
+  width: 90%;
   word-break: break-all; 
   word-wrap: break-word;
   background: #fff;
-  border-top:solid 1px #636363;
-  border-bottom:solid 1px #636363;
-  border-left:solid 1px #636363;
-  border-right:solid 1px #636363;
-}
-.test{
-  
-  text-align: center;
+  margin-top: 0px;
+  text-align: left;
+  border-top:solid 0px #636363;
+  border-bottom:solid 0px #636363;
+  border-left:solid 0px #636363;
+  border-right:solid 0px #636363;
 }
 .timerpl {
   font-size: 12px;
-
+  margin-bottom:0px;
 }
 a {
   color: #132051;
@@ -328,8 +333,5 @@ a:hover {color:#CC3300;text-decoration:none;}
 .delt{
   color: red;
 }
-
-
-
 </style>
 

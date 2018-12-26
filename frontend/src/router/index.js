@@ -6,31 +6,39 @@ import NewPost from '@/components/NewPost'
 import EditPost from '@/components/EditPost'
 import ShowArticle from '@/components/ShowArticle'
 import EditArticle from '@/components/EditArticle'
+import Login from '@/components/Login'
+import AdminPort from '@/components/AdminPort'
 
-Vue.directive('highlight',{
-  update: function (el) {  
-  let blocks = el.querySelectorAll('pre code');
-      blocks.forEach((block)=>{
-        hljs.highlightBlock(block)
-      })
-  }
-})
+Vue.directive("highlight", (el) => {
+  const blocks = el.querySelectorAll("pre code");
+  blocks.forEach((block) => {
+      hljs.highlightBlock(block);
+  });
+});
+// Vue.directive('highlight',{
+//   update: function (el) {  
+//   let blocks = el.querySelectorAll('pre code');
+//       blocks.forEach((block)=>{
+//         hljs.highlightBlock(block)
+//       })
+//   }
+// })
 
 
 Vue.use(Router)
 
 export default new Router({
   mode: 'history',
-  routes: [/*
-    {
-      path: '/',
-      name: 'Hello',
-      component: Hello
-    },*/
+  routes: [
     {
       path: '/',
       name: 'Posts',
       component: Posts
+    },
+    {
+      path: '/login',
+      name: 'Login',
+      component: Login
     },
     {
       path: '/posts/new',
@@ -56,6 +64,11 @@ export default new Router({
       path: '/editArticle/:id',
       name: 'EditArticle',
       component: EditArticle
+    },
+    {
+      path: '/admin',
+      name: 'AdminPort',
+      component: AdminPort
     }
   ]
 })

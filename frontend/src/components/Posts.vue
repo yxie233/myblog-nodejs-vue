@@ -4,12 +4,21 @@
       <my-header></my-header>
     </div>
 
-   <router-link class="title" v-bind:to="{ name: 'Login', params:{}}">login</router-link>
+    <router-link class="title" v-bind:to="{ name: 'Login', params:{}}">login</router-link>
 
     <p class="line-title">
          <span class="line"></span><span class="title">posts</span>
     </p>
-
+    <tr class="sort">
+      Sort by: <span @click="getPosts('date')">[Date]</span>&nbsp;
+      <span  @click="getPosts('hits')">[Hits]</span>&nbsp;
+      <span @click="getPosts('tags')">[Tags]</span> 
+    </tr>
+    <span v-if="bytags">
+      <span class="sort" v-for="tag in alltags">
+          <span @click="getPostsByTag(tag.tagname)"> {{tag.tagname}} </span>
+      </span>           
+    </span>
     <div v-if="posts.length > 0">
       <ul class="posts-list">
         <li v-for="post in posts">
@@ -17,8 +26,12 @@
           <router-link class="title" v-bind:to="{ name: 'ShowArticle', params: { id: post._id } }">
             <a>{{ post.title}}</a>
           </router-link>
-          <span class="createTime">{{" (" + month[post.date.split("-")[1]] + " "+ post.date.split("-")[0] +")"}}</span>
-         
+          <span v-if="sortbyhits">
+            <span class="createTime">{{" (" + post.page_view +")"}}</span>
+          </span>
+          <span v-else>
+            <span class="createTime">{{" (" + month[post.date.split("-")[1]] + " "+ post.date.split("-")[0] +")"}}</span>
+          </span>
         </li>
               
       </ul>
@@ -47,16 +60,26 @@ export default {
   data () {
     return {
       posts: [],
-      month: ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'June', 'July', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+      month: ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'June', 'July', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+      sortbyhits: false,
+      bytags: false,
+      alltags: []
     }
   },
   mounted () {
     this.checkLogin(),
-    this.getPosts()
+    this.getPosts('date')
   },
   methods: {
-    async getPosts () {
-      const response = await ArticleService.fetchArticles()
+    async getPosts (sortby) {
+      if(sortby === 'hits'){
+        this.sortbyhits = true;
+      }else{ this.sortbyhits = false; }
+      if(sortby === 'tags'){
+        this.bytags = true;
+        this.fetchAllTags()
+      }else{ this.bytags = false; }
+      const response = await ArticleService.fetchArticles({ sortby: sortby })
       this.posts = response.data.posts
       /*
       for(let i=0; i < this.posts.length; i++){
@@ -64,7 +87,6 @@ export default {
       }*/
     },
     async checkLogin () {
-    
       await ArticleService.checkLogin()
         .then((response) => {
           // console.log(response["data"])
@@ -73,8 +95,15 @@ export default {
         })
         .catch((errors) => {
           //  console.log("Post.vue err: "+errors)       
-        })
-    
+        })    
+    },
+    async fetchAllTags () {
+      const res = await ArticleService.fetchAllTags();
+      this.alltags = res.data.tags
+    },
+    async getPostsByTag (tag) {
+      const res = await ArticleService.getArticlesByTag({tag: tag});
+      this.posts = res.data.posts
     }
   }
 }
@@ -110,6 +139,18 @@ a.add_post_link {
   font-size: 12px;
   font-weight: bold;
 }
+
+.sort span {
+  cursor: pointer;                
+}
+.sort span:hover {
+  color: #CC3300;              
+}
+.sort span :active {
+                        color: #111;
+                        font-weight: bold;
+                    }
+
 .fmttr {
    width: 100%;
 }
@@ -118,7 +159,7 @@ a.add_post_link {
   width: 100%;
   text-align: center;
 }
- .posts .line {
+.posts .line {
   display: inline-block;
   width: 280px;
   border-top: 1px solid #ccc ;

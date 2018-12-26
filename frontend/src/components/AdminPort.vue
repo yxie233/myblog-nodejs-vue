@@ -73,7 +73,7 @@ export default {
   },
   methods: {
     async getPosts () {
-      const response = await ArticleService.fetchArticles()
+      const response = await ArticleService.fetchArticles('date')
       this.posts = response.data.posts
       /*
       for(let i=0; i < this.posts.length; i++){

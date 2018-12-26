@@ -30,7 +30,8 @@ var schema = require('../models/posts'); // in order to use models
 var Post = mongoose.model("Post"),
     Article = mongoose.model('Article'),
     Comment = mongoose.model('Comment'),
-    Admin = mongoose.model('Admin');
+    Admin = mongoose.model('Admin'),
+    Tags = mongoose.model('Tags');
 
 ///////////////---------
 const passport = require('passport');
@@ -195,20 +196,18 @@ app.delete('/posts/:id', (req, res) => {
 })
 
 // Add new article
-app.post('/api/articles', (req, res) => {
+app.post('/api/articles', myAuthenticate, (req, res) => {
 
   var title = req.body.title;
   var content = req.body.content;
   var date = myDate();
-  var tags=req.body.tags.split("@");
+  var tags = (req.body.tags==='')?null:req.body.tags.split("@");
   var new_post = new Article({
-    aid: 8, //todo
     title: title,
     content: content,
     tags: tags,
     date: date,
     isPublish: true,
-    comment_n: 0,
     page_view: 0
   })
 
@@ -216,34 +215,159 @@ app.post('/api/articles', (req, res) => {
     if (error) {
       console.log(error)
     }
-    res.send({
-      success: true,
-      message: 'Post saved successfully!'
-    })
+  })
+
+  if(tags !== null){
+    addtags(tags, new_post._id)
+  }
+  
+  res.send({
+    success: true,
+    message: 'Post saved successfully!'
   })
 })
 
 // Fetch all art
-app.get('/api/articles', (req, res) => {
+app.get('/api/articles/:sortby', (req, res) => {
+  let sortby = req.params.sortby;
+  let obj=({_id: -1}); console.log("@@@ "+JSON.stringify(req.params));
+  if(sortby === 'hits'){
+    obj={page_view:-1};
+  }
+  else if(sortby === 'tags'){
+    return;
+  }
+  
   Article.find({}, function (error, posts) {
     if (error) { console.error(error); }
     res.send({
       posts: posts
     })
-  }).sort({_id:-1})
+  }).sort(obj)
 })
 
 // Fetch single art
-app.get('/api/articles/:id', (req, res) => {
+app.get('/api/article/:id', (req, res) => {
   Article.findById(req.params.id, function (error, post) {
     if (error) { console.error(error); }
-    res.send(post)
-    post.update({$inc: {'page_view': 1}}).exec();
+    res.send(post)  
+    if(post !== null){
+      post.update({$inc: {'page_view': 1}}).exec();
+    }      
   })
 })
 
+// Fetch articles by tagname
+app.get('/api/articlesbytag/:tag', (req, res) => {
+  let tag = req.params.tag;
+  Tags.findOne({tagname: tag}, function(err,obj) { 
+    if (err) { console.error(err); }
+    if(obj===null){
+      res.send(null);
+    }else{
+      let posts=[];
+      
+      for(let i=0; i<obj.articles_id.length; i++){
+        Article.findOne({_id: obj.articles_id[i]}, function (error, art) {
+          if (error) { console.error(error); }
+          posts.push(art)
+          // console.log("%%%%%%%art%%%: "+JSON.stringify(posts))
+          if(i+1===obj.articles_id.length){ // or use promise outside
+            res.send({
+              posts: posts
+            })
+          }
+        })
+      }      
+    }
+  });
+
+})
+
+// Fetch all tags
+app.get('/api/alltags', (req, res) => {
+  Tags.find({}, function (error, tg) {
+    if (error) { console.error(error); }
+    res.send({
+      tags: tg
+    })
+  }).sort({_id:-1})
+})
+
+// help function
+function findindex(x, targ){
+  for(let i=0; i<x.length; i++){
+    if(targ === x[i])
+      return i;
+  }
+  return -1;
+}
+function contains(arr, targ){
+  for(let i=0;i<arr.length;i++){
+    if(arr[i] === targ)
+      return true;
+  }
+  return false;
+}
+function addtags(tags, art_id){
+  for(let i=0; i<tags.length; i++){ // add this article to each refered tag 
+    Tags.findOne({tagname: tags[i]}, function(err,obj) { 
+      if (err) { console.error(err); }
+      if(obj===null){
+        let newtag= new Tags({tagname:tags[i], articles_id: art_id});
+        newtag.save(function (error) {
+          if (error) {
+            console.log(error)
+          }
+        });
+      }else{
+        obj.articles_id.push(art_id)
+        obj.save(function (error) {
+          if (error) {
+            console.log(error)
+          }
+        });        
+      }
+    });
+  }
+}
+function deleteTags(tags, art_id){
+  for(let i=0; i<tags.length; i++){
+    Tags.findOne({tagname: tags[i]}, function(err,obj) {
+      if (err) { console.error(err); }
+      let index=findindex(obj.articles_id, art_id);
+      if(index !== -1){
+        obj.articles_id.splice(index, 1)
+      }
+     
+      if(obj.articles_id.length === 0){
+        Tags.remove({
+          tagname: tags[i]
+        }, function(err, tg){
+          if (err)
+            res.send(err)
+        })
+      }else{
+        obj.save(function (error) {
+          if (error) {
+            console.log(error)
+          }
+        }); 
+      }
+    })
+  }
+}
+
 // Delete a article
 app.delete('/api/articles/:id', myAuthenticate, (req, res) => {
+  // delete this article from refered tags
+  Article.findById(req.params.id, function (error, post) {
+    if (error) { console.error(error); }
+    if(post !== null && post.tags!==null){
+      deleteTags(post.tags, req.params.id);
+    }      
+  })
+
   Article.remove({
     _id: req.params.id
   }, function(err, post){
@@ -261,18 +385,48 @@ app.delete('/api/articles/:id', myAuthenticate, (req, res) => {
       success: true
     })
   })
+
 })
 
-// Update a art
+// Update a article
 app.put('/api/articles/:id', myAuthenticate, (req, res) => {
   Article.findById(req.body.id, function (error, post) { //#params
     if (error) { console.error(error); }
 
+    // update tagss    
+    let newtags = (req.body.tags==='')?null:req.body.tags.split("@")  
+    if(newtags === null && post.tags !== null){
+      deleteTags(post.tags, req.body.id)
+    }else if(newtags !== null && post.tags === null){
+      addtags(newtags, req.body.id)
+    }else if(newtags !== null && post.tags !== null){
+      let todelete=[];
+      // delete old tags which are not in new tags
+      for(let i=0;i<post.tags.length;i++){
+        if(contains(newtags, post.tags[i])){
+          continue;
+        }else{console.log("????????????del:"+post.tags[i])
+          todelete.push(post.tags[i]);
+        }
+      }
+      console.log("newtg:"+JSON.stringify(newtags))
+      console.log("old:"+JSON.stringify(post.tags))
+      deleteTags(todelete, req.body.id)
+      // to add new tags
+      let toadd=[];
+      for(let i=0;i<newtags.length;i++){
+        if(contains(post.tags, newtags[i])){
+          continue;
+        }else{
+          console.log("????????????add:"+newtags[i])
+          toadd.push(newtags[i]);
+        }
+      }
+      addtags(toadd, req.body.id)
+    }
     post.title = req.body.title
     post.content = req.body.content
-    try{ post.tags = req.body.tags.split("@")}
-    catch(e){post.tags =  req.body.tags}
-    
+    post.tags = newtags
     post.save(function (error) {
       if (error) {
         console.log(error)

@@ -30,6 +30,7 @@ export default {
     }
   },
   mounted () {
+    this.checkLogin(),
     this.getPost()
   },
   methods: {
@@ -38,8 +39,11 @@ export default {
         id: this.$route.params.id
       })
       this.title = response.data.title,
-      this.content = response.data.content,
-      this.tags = response.data.tags
+      this.content = response.data.content
+      for(let i=0; i < response.data.tags.length;i++){
+        this.tags+=response.data.tags[i]+'@';
+      }
+      this.tags = this.tags.substring(0, this.tags.length-1)
     },
     async updatePost () {
       this.content = this.content.replace(/\n$/i,"  \n"); // since markdown need 2 whitespace to start a new line, so I auto add it
@@ -50,6 +54,18 @@ export default {
         tags: this.tags
       })
       this.$router.push({ name: 'Posts' })
+    },
+    async checkLogin () {
+      await ArticleService.checkLogin()
+        .then((response) => {
+          // console.log(response)
+          if(response["data"]==="no")
+            this.$router.push({ name: 'Posts' })
+        })
+        .catch((errors) => {
+          console.log(errors)
+          this.$router.push("/")
+        })
     }
   }
 }
