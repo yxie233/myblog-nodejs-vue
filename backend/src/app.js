@@ -95,10 +95,13 @@ app.get("/api/checklogin", (req, res) => {
 app.get('*', function (req, res, next) {
   // console.log("kkkk: "+ req.originalUrl.indexOf('/article'))
   if(req.originalUrl.indexOf('/article')==0 || req.originalUrl.indexOf('/editArticle')==0 
-    ||req.originalUrl.indexOf('/login')==0 || req.originalUrl.indexOf('/admin')==0) {
+    || req.originalUrl.indexOf('/login')==0 || req.originalUrl.indexOf('/admin')==0
+    || req.originalUrl.indexOf('/static')==0) {
       res.sendFile("index.html", { root: viewsRoot })
-  }else{
+  }else if(req.originalUrl.indexOf('/api')==0) {
       next();
+  }else{
+    res.sendFile(path.join(__dirname, '../../client/static/page404.html'));
   }
 });
 
@@ -235,7 +238,9 @@ app.get('/api/articles/:sortby', (req, res) => {
     obj={page_view:-1};
   }
   else if(sortby === 'tags'){
-    return;
+    res.send({
+      posts: []
+    }); return;
   }
   
   Article.find({}, function (error, posts) {
@@ -257,6 +262,16 @@ app.get('/api/article/:id', (req, res) => {
   })
 })
 
+// helper function find Article by _id
+function findArticleby_id(i, obj) {
+  var a = new Promise(function(resolve, reject) {
+      Article.findOne({_id: obj.articles_id[i]}, function (error, art) {
+        if (error) { console.error(error); }
+        resolve(art)    
+      })      
+  })
+  return a;
+}
 // Fetch articles by tagname
 app.get('/api/articlesbytag/:tag', (req, res) => {
   let tag = req.params.tag;
@@ -265,20 +280,17 @@ app.get('/api/articlesbytag/:tag', (req, res) => {
     if(obj===null){
       res.send(null);
     }else{
-      let posts=[];
-      
+      let promiseArr=[];
       for(let i=0; i<obj.articles_id.length; i++){
-        Article.findOne({_id: obj.articles_id[i]}, function (error, art) {
-          if (error) { console.error(error); }
-          posts.push(art)
-          // console.log("%%%%%%%art%%%: "+JSON.stringify(posts))
-          if(i+1===obj.articles_id.length){ // or use promise outside
-            res.send({
-              posts: posts
-            })
-          }
-        })
-      }      
+        promiseArr.push(findArticleby_id(i, obj))
+      }    
+      Promise.all(promiseArr).then(function (posts) {
+          // console.log("%%%%%%%art3333%%%: "+JSON.stringify(posts))
+          posts.sort(function(a, b){return a.date - b.date})
+          res.send({
+            posts: posts
+          })
+      })        
     }
   });
 
@@ -291,14 +303,24 @@ app.get('/api/alltags', (req, res) => {
     res.send({
       tags: tg
     })
-  }).sort({_id:-1})
+  }).sort({tagname: 1})
 })
 
 // help function
-function findindex(x, targ){
-  for(let i=0; i<x.length; i++){
-    if(targ === x[i])
-      return i;
+function findindex(x, targ, arg){
+  if(arg!==null){
+    for(let i=0; i<x.length; i++){
+      const str=x[i][arg];
+      // console.log(encodeURIComponent(str)===encodeURIComponent(targ))     
+      if(encodeURIComponent(str)===encodeURIComponent(targ))
+        return i;
+    }
+  }
+  else{    
+    for(let i=0; i<x.length; i++){
+      if(targ === x[i])
+        return i;
+    }
   }
   return -1;
 }
@@ -335,7 +357,11 @@ function deleteTags(tags, art_id){
   for(let i=0; i<tags.length; i++){
     Tags.findOne({tagname: tags[i]}, function(err,obj) {
       if (err) { console.error(err); }
-      let index=findindex(obj.articles_id, art_id);
+      if(obj === null){
+        console.log("cannot find this tag");
+        return;
+      }
+      let index=findindex(obj.articles_id, art_id, null);
       if(index !== -1){
         obj.articles_id.splice(index, 1)
       }
@@ -357,6 +383,17 @@ function deleteTags(tags, art_id){
     })
   }
 }
+function removeAllComments(aid){
+  Comment.deleteOne({
+    article_id: aid
+  }, function(err, post){
+    if (err)
+      return err
+    return {
+      success: true
+    }
+  })
+}
 
 // Delete a article
 app.delete('/api/articles/:id', myAuthenticate, (req, res) => {
@@ -376,15 +413,7 @@ app.delete('/api/articles/:id', myAuthenticate, (req, res) => {
   })
 
   // also delete its comments
-  Comment.remove({
-    article_id: req.params.id
-  }, function(err, post){
-    if (err)
-      res.send(err)
-    res.send({
-      success: true
-    })
-  })
+  removeAllComments(req.params.id)
 
 })
 
@@ -490,7 +519,7 @@ app.get('/api/comment/:id', (req, res) => {
   })
 })
 
-// Update add a cmt
+// Update add a cmt by add a reply to it
 app.put('/api/comment/:id', (req, res) => {
   Comment.find({article_id: req.params.id}, function (error, cmt) {
     if (error) { console.error(error); }
@@ -526,6 +555,46 @@ app.put('/api/comment/:id', (req, res) => {
         message: 'Added a reply!'
       })
     }) 
+  })
+})
+
+// Update add a cmt by delete a reply
+app.put('/api/deleteCommentReply/:id', (req, res) => {
+  Comment.find({article_id: req.params.id}, function (error, cmt) {
+    if (error) { console.error(error); }
+    var comments = cmt[0].comment;
+    cmt[0].comment_num = cmt[0].comment_num-1; // dec cmt number count
+    for(let i=0;i<comments.length; i++ ){
+    //  console.log( "%^^&&&&&&&&"+JSON.stringify(comments[i]))
+      if(comments[i]._id == req.body.parentId){
+        const str=req.body.childId
+        if(str !== null){
+          
+          let index = findindex(comments[i]["comment_replies"], str, "_id")
+          if(index !== -1){
+            comments[i]["comment_replies"].splice(index, 1)
+          }    
+        }else{
+          if(comments[i]["comment_replies"] !== null)
+            cmt[0].comment_num -= comments[i]["comment_replies"].length; // dec children replies
+          comments.splice(i, 1)          
+        }           
+        break;
+      }
+    }
+    if(comments.length === 0){
+      removeAllComments(req.params.id)
+    }else{
+      cmt[0].save(function (error) {
+        if (error) {
+          console.log(error)
+        }        
+      })
+    }
+    res.send({
+          success: true,
+          message: 'Update comments!'
+    })        
   })
 })
 

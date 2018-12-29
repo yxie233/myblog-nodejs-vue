@@ -34,6 +34,9 @@ export default {
   },
   methods: {
     async login () {
+      if(this.username.length<4 || this.password.length<5){
+        this.failed = true; return;
+      }
       await ArticleService.loginAdmin({
         username: this.username,
         password: this.password
@@ -44,8 +47,6 @@ export default {
       })
       .catch(errors => {
         console.log("failed login");
-        // this.username = '';
-        // this.password = '';
         this.failed = true;
       });
 
@@ -55,10 +56,9 @@ export default {
 </script>
 <style type="text/css" scoped>
 .form input {   
-  width: 400px;
+  width: 300px;
   padding: 10px;
   border: 1px solid #e0dede;
-  outline: none;
   font-size: 14px;
 }
 .form div {
@@ -71,7 +71,7 @@ export default {
   text-transform: uppercase;
   font-size: 12px;
   font-weight: bold;
-  width: 200px;
+  width: 323px;
   border: none;
   cursor: pointer;
 }

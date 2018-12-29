@@ -25,6 +25,9 @@ export default {
   updateComment (params) {
     return Api().put('api/comment/' + params.id, params)
   },
+  deleteCommentReply (params) {
+    return Api().put('api/deleteCommentReply/' + params.id, params)
+  },
   fetchAllTags () {
     return Api().get('api/alltags')
   },

@@ -4,13 +4,21 @@
       <my-header></my-header>
     </div>
 
-    <p class="line-title">
-         <span class="line"></span><span class="title">posts</span>
-    </p>
+    <line-title :title="'POSTS (' + posts.length + ')'"></line-title>
     <div>
         <router-link v-bind:to="{ name: 'NewArticle' }" class=""><u>Add article</u></router-link>
         &nbsp;<a href="#" @click="logout()"><u>Logout</u></a>
     </div>
+    <p class="sort">
+      Sort by: <span :class="{ active: sortby === 'date'}"  @click="getPosts('date')">[Date]</span>
+      <span :class="{ active: sortby === 'hits'}" @click="getPosts('hits')">[Hits]</span>
+      <span :class="{ active: sortby === 'tags'}" @click="getPosts('tags')">[Tags]</span>  
+    </p>
+    <p class="sort" v-if="bytags">--
+      <span v-for="tag in alltags">
+          <span :class="{ active: tagSelected === tag.tagname}" @click="getPostsByTag(tag.tagname)"> [{{tag.tagname}}] </span>
+      </span>           
+    </p>
 
     <div v-if="posts.length > 0">
       <ul class="posts-list">
@@ -19,7 +27,12 @@
           <router-link class="title" v-bind:to="{ name: 'ShowArticle', params: { id: post._id } }">
             <a>{{ post.title}}</a>
           </router-link>
-          <span class="createTime">{{" (" + month[post.date.split("-")[1]] + " "+ post.date.split("-")[0] +")"}}</span>
+          <span v-if="sortbyhits">
+            <span class="createTime">{{" (" + post.page_view +")"}}</span>
+          </span>
+          <span v-else>
+            <span class="createTime">{{" (" + month[post.date.split("-")[1]] + " "+ post.date.split("-")[0] +")"}}</span>
+          </span>         
          
           <div style="float:right; text-align:right">
             <router-link v-bind:to="{ name: 'EditArticle', params: { id: post._id } }">Edit</router-link> |
@@ -29,9 +42,9 @@
               
       </ul>
     </div>
-    <div v-else>
+    <!--div v-else>
       Loading... <br />
-    </div>    
+    </div-->    
 
     <div class="footer">
       <my-footer></my-footer>
@@ -41,6 +54,7 @@
 </template>
 
 <script>
+import linetitle from './LineTitle';
 import myheader from './MyHeader';
 import myFooter from './MyFooter';
 import ArticleService from '@/services/ArticleService'
@@ -48,12 +62,18 @@ export default {
   name: 'posts',
   components: {
     MyHeader: myheader,
-    MyFooter: myFooter
+    MyFooter: myFooter,
+    LineTitle: linetitle
   },
   data () {
     return {
       posts: [],
-      month: ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'June', 'July', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+      month: ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'June', 'July', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+      sortbyhits: false,
+      bytags: false,
+      sortby: 'date',
+      tagSelected: '',
+      alltags: []
     }
   },/*
   created () {
@@ -69,11 +89,20 @@ export default {
   },*/
   mounted () {
     this.checkLogin(),
-    this.getPosts()
+    this.getPosts('date')
   },
   methods: {
-    async getPosts () {
-      const response = await ArticleService.fetchArticles('date')
+    async getPosts (sortby) {
+      this.sortby = sortby
+      if(sortby === 'hits'){
+        this.sortbyhits = true;
+        this.tagSelected = '';
+      }else{ this.sortbyhits = false; }
+      if(sortby === 'tags'){
+        this.bytags = true;
+        this.fetchAllTags()
+      }else{ this.bytags = false; this.tagSelected = '';}
+      const response = await ArticleService.fetchArticles({ sortby: sortby })
       this.posts = response.data.posts
       /*
       for(let i=0; i < this.posts.length; i++){
@@ -110,6 +139,15 @@ export default {
       for(let i=0; i < this.posts.length; i++){
         this.posts[i].date = this.posts[i].date.split(" ")[0]
       }*/
+    },
+    async fetchAllTags () {
+      const res = await ArticleService.fetchAllTags();
+      this.alltags = res.data.tags
+    },
+    async getPostsByTag (tag) {
+      this.tagSelected = tag
+      const res = await ArticleService.getArticlesByTag({tag: tag});
+      this.posts = res.data.posts
     }
   }
 }
@@ -146,6 +184,22 @@ a.add_post_link {
   font-weight: bold;
 }
 a:hover {color:#CC3300;text-decoration:none;}
+.sort {
+  font-size: 13px;
+  margin: 0 auto;
+  text-align: left;
+}
+.sort span {
+  margin-right: 5px;
+  cursor: pointer;             
+}
+.sort span:hover {
+  color: #CC3300;              
+}
+.active { 
+  font-weight: bold;
+}
+
 .fmttr {
    width: 100%;
 }
@@ -194,33 +248,6 @@ a:hover {color:#CC3300;text-decoration:none;}
 }
 .createTime {
   font-size: 12px;
-}
-.line-title {
-  position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-bottom: 10px;
-}
-.line-title .title {
-  text-decoration: none;
-  text-transform: uppercase;
-  font-weight: bold;
-  font-size: 13px;
-  top: 0px;
-  padding: 0 10px;
-  color: #999;
-  background-color: white;
-}
-.line-title .title::before {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 0;
-  z-index: -1;
-  width: 100%;
-  height: 1px;
-  background-color: #999;
 }
 
 .background {

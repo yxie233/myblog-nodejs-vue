@@ -4,21 +4,19 @@
       <my-header></my-header>
     </div>
 
-    <router-link class="title" v-bind:to="{ name: 'Login', params:{}}">login</router-link>
+   <line-title :title="'POSTS (' + posts.length + ')'"></line-title>
 
-    <p class="line-title">
-         <span class="line"></span><span class="title">posts</span>
+    
+    <p class="sort">
+      Sort by: <span :class="{ active: sortby === 'date'}"  @click="getPosts('date')">[Date]</span>
+      <span :class="{ active: sortby === 'hits'}" @click="getPosts('hits')">[Hits]</span>
+      <span :class="{ active: sortby === 'tags'}" @click="getPosts('tags')">[Tags]</span> 
     </p>
-    <tr class="sort">
-      Sort by: <span @click="getPosts('date')">[Date]</span>&nbsp;
-      <span  @click="getPosts('hits')">[Hits]</span>&nbsp;
-      <span @click="getPosts('tags')">[Tags]</span> 
-    </tr>
-    <span v-if="bytags">
-      <span class="sort" v-for="tag in alltags">
-          <span @click="getPostsByTag(tag.tagname)"> {{tag.tagname}} </span>
+    <p class="sort" v-if="bytags">--
+      <span  v-for="tag in alltags">
+          <span :class="{ active: tagSelected === tag.tagname}" @click="getPostsByTag(tag.tagname)"> [{{tag.tagname}}] </span>
       </span>           
-    </span>
+    </p>
     <div v-if="posts.length > 0">
       <ul class="posts-list">
         <li v-for="post in posts">
@@ -36,9 +34,9 @@
               
       </ul>
     </div>
-    <div v-else>
+    <!--div v-else>
       Loading... You may refresh this page<br />
-    </div>    
+    </div-->    
 
     <div class="footer">
       <my-footer></my-footer>
@@ -48,6 +46,7 @@
 </template>
 
 <script>
+import linetitle from './LineTitle';
 import myheader from './MyHeader';
 import myFooter from './MyFooter';
 import ArticleService from '@/services/ArticleService'
@@ -55,7 +54,8 @@ export default {
   name: 'posts',
   components: {
     MyHeader: myheader,
-    MyFooter: myFooter
+    MyFooter: myFooter,
+    LineTitle: linetitle
   },
   data () {
     return {
@@ -63,7 +63,10 @@ export default {
       month: ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'June', 'July', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
       sortbyhits: false,
       bytags: false,
-      alltags: []
+      sortby: 'date',
+      tagSelected: '',
+      alltags: [],
+      passTag: ''
     }
   },
   mounted () {
@@ -71,14 +74,25 @@ export default {
     this.getPosts('date')
   },
   methods: {
-    async getPosts (sortby) {
+    async getPosts (sortby) {      
+      if(this.$route.params.tagSelect !== undefined){
+        sortby = 'tags'
+        this.getPostsByTag(this.$route.params.tagSelect)
+        this.passTag = this.$route.params.tagSelect
+        this.$route.params.tagSelect = undefined
+      }   
+      this.sortby = sortby
       if(sortby === 'hits'){
         this.sortbyhits = true;
+        this.tagSelected = '';        
       }else{ this.sortbyhits = false; }
       if(sortby === 'tags'){
         this.bytags = true;
-        this.fetchAllTags()
-      }else{ this.bytags = false; }
+        this.fetchAllTags()        
+      }else{
+        this.bytags = false; 
+        this.tagSelected = '';
+      }
       const response = await ArticleService.fetchArticles({ sortby: sortby })
       this.posts = response.data.posts
       /*
@@ -98,35 +112,26 @@ export default {
         })    
     },
     async fetchAllTags () {
-      const res = await ArticleService.fetchAllTags();
-      this.alltags = res.data.tags
+      await ArticleService.fetchAllTags().then((response) => {
+        this.alltags = response.data.tags
+        if(response["data"].tags[0].tagname)
+        if(this.passTag !== ''){
+           this.getPostsByTag(this.passTag)
+           this.passTag = ''
+        }else
+          this.getPostsByTag(response["data"].tags[0].tagname)
+      })
     },
     async getPostsByTag (tag) {
+      this.tagSelected = tag;
       const res = await ArticleService.getArticlesByTag({tag: tag});
       this.posts = res.data.posts
     }
   }
 }
 </script>
+
 <style scoped>
-.table-wrap {
-  width: 50%;
-  margin: 0 auto;
-  text-align: center;
-  font-size: 14px;
-}
-table th, table tr {
-  text-align: left;
-}
-table thead {
-  background: #f2f2f2;
-}
-table tr td {
-  padding: 0px;
-}
-table tr:nth-child(0) {
-  background: #f2f2f2;
-}
 a {
   color: #132051;
   text-decoration: none;
@@ -139,17 +144,21 @@ a.add_post_link {
   font-size: 12px;
   font-weight: bold;
 }
-
+.sort {
+  font-size: 13px;
+  margin: 0 auto;
+  text-align: left;
+}
 .sort span {
-  cursor: pointer;                
+  margin-right: 5px;
+  cursor: pointer;             
 }
 .sort span:hover {
   color: #CC3300;              
 }
-.sort span :active {
-                        color: #111;
-                        font-weight: bold;
-                    }
+.active { 
+  font-weight: bold;
+}
 
 .fmttr {
    width: 100%;
@@ -171,14 +180,12 @@ a.add_post_link {
   vertical-align: sub;
 }
 
-
 .homepage {
   height: 100%;
   padding: 0 10px;   
   max-width: 640px;
   margin: 0 auto;
-}
-   
+}   
 .posts-list {
   margin-bottom: 30px;
   padding: 0 10px;
@@ -200,33 +207,7 @@ a.add_post_link {
 .createTime {
   font-size: 12px;
 }
-.line-title {
-  position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-bottom: 10px;
-}
-.line-title .title {
-  text-decoration: none;
-  text-transform: uppercase;
-  font-weight: bold;
-  font-size: 13px;
-  top: 0px;
-  padding: 0 10px;
-  color: #999;
-  background-color: white;
-}
-.line-title .title::before {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 0;
-  z-index: -1;
-  width: 100%;
-  height: 1px;
-  background-color: #999;
-}
+
 
 .background {
   position: fixed;
@@ -235,7 +216,7 @@ a.add_post_link {
   z-index: -1;
   width: 100%;
   height: 100%;
-  background: url("../assets/posts.png") no-repeat fixed top;
+  background: url("") no-repeat fixed top;
   background-size: cover;
   opacity: 0.2;
   filter: blur(3px);

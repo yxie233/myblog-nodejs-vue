@@ -7,9 +7,15 @@
     <h2 align="left">{{title}}</h2>
      
     <div class="createTime">{{date}} (View:{{pageView}})</div>        
-    <div v-if="tags != null" align="left">
-      <tr>Tags:&nbsp;<td v-for="tag in tags">{{tag}} &nbsp;</td></tr>  
+    <div v-if="tags != null" class="sort">
+      Tags:&nbsp;
+        <span v-for="tag in tags">
+          <router-link class="title" v-bind:to="{ name: 'Posts', params: { tagSelect: tag } }">
+            [{{tag}}]
+          </router-link>
+        </span>
     </div>
+
     <p v-highlight class="post-content" v-html="compiledMarkdown"></p>
   
     <div align="left" class="comments">
@@ -34,6 +40,7 @@
                         <td v-highlight class="rpl-content" v-html="mymarked(reply.reply_content)"></td>                                         
                         <div class="timerpl">
                           <div style="float:right; text-align:right">
+                            <span v-if="admin"><a @click="deleteCommentReply(item._id, reply._id)">Delete</a>&nbsp;</span>
                             <a href="#cmtbox" @click="replyComment(item._id, reply.reply_username)">Reply</a>&nbsp;
                           </div>
                           <tr >{{reply.reply_dateTime}}</tr>
@@ -45,6 +52,7 @@
                 <div class="timerpl">
                   <br><span>&nbsp;{{item.dateTime}}</span>
                   <div style="float:right; text-align:right">
+                    <span v-if="admin"><a @click="deleteCommentReply(item._id, null)">Delete</a>&nbsp;</span>
                     <a href="#cmtbox" @click="replyComment(item._id, item.username)">Reply</a>&nbsp;
                   </div>
                 </div>
@@ -132,7 +140,8 @@ export default {
       preview: false,
       cmtCount: 0,
       pageView: 0,
-      warning: ''
+      warning: '',
+      admin: false
     }
   },
   computed: {
@@ -149,6 +158,7 @@ export default {
   },
   mounted () {
     window.scroll(0, 0),
+    this.checkLogin(),
     this.getPost(),
     this.getComments()     
   },
@@ -162,6 +172,19 @@ export default {
     autoNewline: function(){
       // since markdown need 2 whitespace to start a new line, so I auto add it
       this.commentText = this.commentText.replace(/\n$/i,"  \n");       
+    },
+    async checkLogin () {
+      await ArticleService.checkLogin()
+        .then((response) => {
+          // console.log(response["data"])
+          if(response["data"]==="ok")
+            this.admin = true
+          else
+            this.admin = false
+        })
+        .catch((errors) => {
+          //  console.log("Post.vue err: "+errors)       
+        })    
     },
     async getPost () {
       const response = await ArticleService.getArticle({
@@ -230,9 +253,17 @@ export default {
       this.comments = response.data.comment;
       this.cmtCount = response.data.comment_num;
     },
-    async replyComment (parentId, name) {
+    replyComment: function (parentId, name) {
       this.parentId = parentId
       this.commentReplyTo = name
+    },
+    async deleteCommentReply (parentID, childID) {
+      const response = await ArticleService.deleteCommentReply({
+        id: this.$route.params.id,
+        parentId: parentID,
+        childId: childID
+      })
+      this.getComments(); 
     }
   }
 }
@@ -328,10 +359,23 @@ export default {
 }
 a {
   color: #132051;
+  text-decoration:none;
 }
-a:hover {color:#CC3300;text-decoration:none;}
+a:hover {color:#CC3300;}
 .delt{
   color: red;
 }
+
+.sort {
+  text-decoration: none;
+  font-size: 13px;
+  margin: 0 auto;
+  text-align: left;
+}
+.sort span {
+  margin-right: 5px;
+  cursor: pointer;             
+}
+
 </style>
 

@@ -8,6 +8,7 @@ import ShowArticle from '@/components/ShowArticle'
 import EditArticle from '@/components/EditArticle'
 import Login from '@/components/Login'
 import AdminPort from '@/components/AdminPort'
+import RefreshSupplier from '@/components/RefreshSupplier'
 
 Vue.directive("highlight", (el) => {
   const blocks = el.querySelectorAll("pre code");
@@ -69,6 +70,11 @@ export default new Router({
       path: '/admin',
       name: 'AdminPort',
       component: AdminPort
+    },
+    {
+      path: '/refreshpage',
+      name: 'RefreshSupplier',
+      component: RefreshSupplier
     }
   ]
 })
