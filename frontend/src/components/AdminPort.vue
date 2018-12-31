@@ -111,8 +111,7 @@ export default {
     },
     async deletePost (id) {
       await ArticleService.deleteArticle(id)
-      this.getPosts()
-      this.$router.push({ name: 'Posts' })
+      this.getPosts('date')
     },
     async checkLogin () {
       await ArticleService.checkLogin()

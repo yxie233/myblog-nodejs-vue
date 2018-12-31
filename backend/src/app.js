@@ -7,7 +7,9 @@ const cookieSession = require('cookie-session')
 
 const app = express()
 app.use(morgan('combined'))
-app.use(bodyParser.json())
+// app.use(bodyParser.json())
+app.use(bodyParser.json({limit: '10mb'})); // set limit data size of request
+app.use(bodyParser.urlencoded({limit: '10mb', extended: true}));
 app.use(cors())
 
 const viewsRoot = path.join(__dirname, '../../client/dist');
@@ -236,6 +238,8 @@ app.get('/api/articles/:sortby', (req, res) => {
   let obj=({_id: -1}); console.log("@@@ "+JSON.stringify(req.params));
   if(sortby === 'hits'){
     obj={page_view:-1};
+  }else if(sortby === 'response'){
+    obj={comment_num:-1};
   }
   else if(sortby === 'tags'){
     res.send({
@@ -354,7 +358,7 @@ function addtags(tags, art_id){
   }
 }
 function deleteTags(tags, art_id){
-  for(let i=0; i<tags.length; i++){
+  for(let i=0; i<tags.length; i++){ console.log('hey00000000000'+i)
     Tags.findOne({tagname: tags[i]}, function(err,obj) {
       if (err) { console.error(err); }
       if(obj === null){
@@ -400,25 +404,27 @@ app.delete('/api/articles/:id', myAuthenticate, (req, res) => {
   // delete this article from refered tags
   Article.findById(req.params.id, function (error, post) {
     if (error) { console.error(error); }
+    console.log('hey00000000000'+JSON.stringify(post))
     if(post !== null && post.tags!==null){
       deleteTags(post.tags, req.params.id);
+      
     }      
+  }).then((x)=>{
+    Article.remove({
+      _id: req.params.id
+    }, function(err, post){
+      if (err)
+        res.send(err)
+    })
+    // also delete its comments
+    removeAllComments(req.params.id)    
   })
 
-  Article.remove({
-    _id: req.params.id
-  }, function(err, post){
-    if (err)
-      res.send(err)
-  })
-
-  // also delete its comments
-  removeAllComments(req.params.id)
-
+  res.send('ok')
 })
 
 // Update a article
-app.put('/api/articles/:id', myAuthenticate, (req, res) => {
+app.put('/api/articles/:id',  myAuthenticate, (req, res) => {
   Article.findById(req.body.id, function (error, post) { //#params
     if (error) { console.error(error); }
 
@@ -467,6 +473,27 @@ app.put('/api/articles/:id', myAuthenticate, (req, res) => {
   })
 })
 
+function updateArticleCmtNum(aid){
+  Article.findOne({_id: aid}, function (error, art) {
+    if (error) { console.error(error); return; }
+
+      Comment.findOne({article_id: aid}, function (err, cmt) {
+        if (err) { console.error(err); return; }
+      
+        if(cmt===null)
+          art.comment_num = 0;
+        else
+          art.comment_num = cmt.comment_num; 
+        art.save(function (error2) {
+            if (error2) {
+              console.log(error2)
+            }        
+        })
+      })
+   
+  })
+}
+
 // Add a comment
 app.post('/api/comment', (req, res) => {
 
@@ -479,7 +506,7 @@ app.post('/api/comment', (req, res) => {
         dateTime: myDate(),
         comment_replies: null      
     }
-    
+
     if (cmt.length > 0){
       cmt[0].comment_num = cmt[0].comment_num+1;
       cmt[0].comment.push(new_cmt);  
@@ -491,18 +518,22 @@ app.post('/api/comment', (req, res) => {
       })
 
     }
+
+
     cmt[0].save(function (error) {
         if (error) {
           console.log(error)
-        }
+        }    
+        updateArticleCmtNum(req.body.article_id, 0)
         res.send({
-          success: true,
-          message: 'Added a comment!'
-        })
+              success: true,
+              message: 'Added a comment!'
+        })    
     })
+  
 
   })
-
+  
 })
 
 // Fetch cmts
@@ -550,6 +581,7 @@ app.put('/api/comment/:id', (req, res) => {
       if (error) {
         console.log(error)
       }
+      updateArticleCmtNum(req.params.id, 0)
       res.send({
         success: true,
         message: 'Added a reply!'
@@ -558,7 +590,7 @@ app.put('/api/comment/:id', (req, res) => {
   })
 })
 
-// Update add a cmt by delete a reply
+// Update a cmt by delete a reply
 app.put('/api/deleteCommentReply/:id', (req, res) => {
   Comment.find({article_id: req.params.id}, function (error, cmt) {
     if (error) { console.error(error); }
@@ -584,11 +616,13 @@ app.put('/api/deleteCommentReply/:id', (req, res) => {
     }
     if(comments.length === 0){
       removeAllComments(req.params.id)
+      updateArticleCmtNum(req.params.id, 0)
     }else{
       cmt[0].save(function (error) {
         if (error) {
           console.log(error)
-        }        
+        }  
+        updateArticleCmtNum(req.params.id, null)      
       })
     }
     res.send({

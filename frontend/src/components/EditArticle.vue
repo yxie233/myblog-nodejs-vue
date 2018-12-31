@@ -40,10 +40,13 @@ export default {
       })
       this.title = response.data.title,
       this.content = response.data.content
-      for(let i=0; i < response.data.tags.length;i++){
-        this.tags+=response.data.tags[i]+'@';
+      if( response.data.tags !== null){
+        for(let i=0; i < response.data.tags.length;i++){
+          this.tags+=response.data.tags[i]+'@';
+        }
+        this.tags = this.tags.substring(0, this.tags.length-1)
       }
-      this.tags = this.tags.substring(0, this.tags.length-1)
+      
     },
     async updatePost () {
       this.content = this.content.replace(/\n$/i,"  \n"); // since markdown need 2 whitespace to start a new line, so I auto add it

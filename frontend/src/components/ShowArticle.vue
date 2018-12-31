@@ -15,13 +15,13 @@
           </router-link>
         </span>
     </div>
-
+   
     <p v-highlight class="post-content" v-html="compiledMarkdown"></p>
-  
+ 
     <div align="left" class="comments">
               
         <div v-if="comments.length>0">
-          <h3>Response({{cmtCount}})</h3>  
+          <h5 style="background:#e0dede; margin-bottom:0px;">Response({{cmtCount}})</h5>  
             <div v-for="item in comments">
               <table class="table">        
                 <div class="rpl-names">       
@@ -36,21 +36,23 @@
                           <font color="#4682B4">&nbsp;<b>{{reply.reply_username}}</b></font>
                           &nbsp;reply to <font color="#4682B4"><b>{{reply.reply_to}}</b></font>:  
                         </div>
-
-                        <td v-highlight class="rpl-content" v-html="mymarked(reply.reply_content)"></td>                                         
+                        <div v-highlight class="rpl-content-child" v-html="mymarked(reply.reply_content)"></div>                                         
                         <div class="timerpl">
+                        
+                          &nbsp;{{reply.reply_dateTime}}
                           <div style="float:right; text-align:right">
                             <span v-if="admin"><a @click="deleteCommentReply(item._id, reply._id)">Delete</a>&nbsp;</span>
                             <a href="#cmtbox" @click="replyComment(item._id, reply.reply_username)">Reply</a>&nbsp;
-                          </div>
-                          <tr >{{reply.reply_dateTime}}</tr>
+                          </div>                                
+                       
                         </div>
                       </div>
                     </div>
+                    <br />
                 </div>
 
                 <div class="timerpl">
-                  <br><span>&nbsp;{{item.dateTime}}</span>
+                  <span>&nbsp;{{item.dateTime}}</span>
                   <div style="float:right; text-align:right">
                     <span v-if="admin"><a @click="deleteCommentReply(item._id, null)">Delete</a>&nbsp;</span>
                     <a href="#cmtbox" @click="replyComment(item._id, item.username)">Reply</a>&nbsp;
@@ -61,34 +63,39 @@
             </div>
           
         </div>
-        <div v-else><br />No response yet, leave the first comment.</div>
+        <div v-else  style="background:#e0dede;">&nbsp;No response yet, leave the first comment.</div>
     </div>
 
       <div align="left" id="cmtbox" class="commentBox">
-        <h3>Add Comments</h3>
+       
         
-        <tr>
-          <td>
+        <div class="infoInputLine">
+         
             NAME <input type="text" name="commentUsername" placeholder="Your Name" v-model="commentUsername">
-          </td>                    
-          <td>
+      
             EMAIL <input type="text" name="commentEmail" placeholder="Your Email" v-model="commentEmail">
-          </td>  
+         
           <td>
             <div v-if="this.commentReplyTo !== ''"> 
               @{{this.commentReplyTo}} <a href="#cmtbox" @click="resetComment" class="delt">X</a>
             </div>            
           </td>      
-        </tr>   
-        <div v-if="this.warning !== ''">{{this.warning}}</div>
-        <textarea rows="6" placeholder="Leave a response" @input="autoNewline" v-model="commentText"></textarea>
-        <div v-if="preview != false" class=“post-content”>
-          <p v-highlight v-html="mymarked(commentText)"></p>
-        </div>
-        <a href="#cmtbox"  @click="mdpreview()">Preview  (Markdown is supported)</a>
+
+        </div>   
+        <div class="previewCss" style="color:red; font-size:13px" v-if="this.warning !== ''">{{this.warning}}</div>
+        <textarea rows="6" placeholder="Leave a response"  v-model="commentText"></textarea>
+
+        <div class="previewCss">
+          <div v-if="preview != false" class=“post-content”>
+            <p v-highlight v-html="mymarked(commentText)"></p>
+          </div>
+        
+
+          <a href="#cmtbox"  @click="mdpreview()">Preview  (Markdown is supported)</a>
           <div style="float:right">
              <button class="btn" @click="addComment">Post&nbsp;</button>          
           </div>
+        </div>
         
       </div>
 
@@ -112,7 +119,7 @@ gfm: true,
 tables: true,
 breaks: false,
 pedantic: false,
-sanitize: true,
+sanitize: false, // if set true then some <html> tag will become string
 smartLists: true,
 smartypants: false
 })
@@ -292,25 +299,49 @@ export default {
 }
 .commentBox {
   margin: 0 auto;
+  margin-top: 20px;
   margin-bottom: 20px;
+  border-top:solid 1px #999;
+  border-bottom:solid 1px #999;
+  border-left:solid 1px #999;
+  border-right:solid 1px #999;
+}
+.infoInputLine {
+  margin-top: 3px;
+  margin-left: 10px;
+  width: 97%;
+  outline:none;
+}
+.previewCss {
+  margin-left: 10px;
+  margin-right: 10px;
+  margin-bottom: 5px;
+  word-break: break-all; 
+  word-wrap: break-word;
 }
 .commentBox input{
   padding: 4px;
-  margin-bottom: 1px;
+  margin-top: 2px;
+  margin-bottom: 2px;
+  margin-left: 2px;
+  border: 1px solid #e0dede;
+  outline-color: #ff00ff;
 }
 .commentBox textarea {
-  width: 98%;
+  width: 97%;
+  margin-left: 2px;
   padding: 6px;
   border: 1px solid #e0dede;
   outline-color: #ff00ff;
   font-size: 14px;
 }
-.comments {
+.comments { 
   margin: 0 auto;
   margin-top: 40px;  
+  margin-bottom:10px;
 }
 .comments-rpl {
-  width: 85%;
+  width: 90%;
   word-break: break-all; 
   word-wrap: break-word;
   margin: 0 auto;
@@ -326,13 +357,17 @@ export default {
   border-left:solid 1px #104E8B;
   border-right:solid 1px #104E8B;
 }
-.rpl-names {
-  margin:0 auto;
+.rpl-names {  
+  margin-top:1px;
+  margin-left:1px;
+  margin-right:1px;
   background: #AEEEEE;
 }
 .rpl-cell{
+  overflow:auto; 
+  max-height: 400px;
   margin-top: 2px;
-  width: 97%;
+  max-width: 576px;
   word-break: break-all; 
   word-wrap: break-word;
   border-top:solid 1px #104E8B;
@@ -342,7 +377,9 @@ export default {
 }
 .rpl-content {
   margin:0 auto;
-  width: 90%;
+  overflow:auto;
+  max-width:576px;
+  max-height: 400px;
   word-break: break-all; 
   word-wrap: break-word;
   background: #fff;
@@ -353,9 +390,19 @@ export default {
   border-left:solid 0px #636363;
   border-right:solid 0px #636363;
 }
+.rpl-content-child{
+  margin-left: 10px;
+  margin-right: 10px;
+  overflow:auto; 
+  max-height: 300px;
+  max-width: 570px;
+}
 .timerpl {
   font-size: 12px;
-  margin-bottom:0px;
+  margin-left:1px;
+  margin-right:1px;
+  margin-bottom:1px;
+  background: #AEEEEE;
 }
 a {
   color: #132051;

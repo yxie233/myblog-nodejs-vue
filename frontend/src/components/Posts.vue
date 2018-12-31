@@ -10,6 +10,7 @@
     <p class="sort">
       Sort by: <span :class="{ active: sortby === 'date'}"  @click="getPosts('date')">[Date]</span>
       <span :class="{ active: sortby === 'hits'}" @click="getPosts('hits')">[Hits]</span>
+      <span :class="{ active: sortby === 'response'}" @click="getPosts('response')">[Response]</span>
       <span :class="{ active: sortby === 'tags'}" @click="getPosts('tags')">[Tags]</span> 
     </p>
     <p class="sort" v-if="bytags">--
@@ -24,7 +25,10 @@
           <router-link class="title" v-bind:to="{ name: 'ShowArticle', params: { id: post._id } }">
             <a>{{ post.title}}</a>
           </router-link>
-          <span v-if="sortbyhits">
+          <span v-if="byresponse">
+            <span class="createTime">{{" (" + post.comment_num+")"}}</span>
+          </span>
+          <span v-else-if="sortbyhits">
             <span class="createTime">{{" (" + post.page_view +")"}}</span>
           </span>
           <span v-else>
@@ -63,6 +67,7 @@ export default {
       month: ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'June', 'July', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
       sortbyhits: false,
       bytags: false,
+      byresponse: false,
       sortby: 'date',
       tagSelected: '',
       alltags: [],
@@ -82,16 +87,22 @@ export default {
         this.$route.params.tagSelect = undefined
       }   
       this.sortby = sortby
-      if(sortby === 'hits'){
-        this.sortbyhits = true;
-        this.tagSelected = '';        
-      }else{ this.sortbyhits = false; }
       if(sortby === 'tags'){
         this.bytags = true;
         this.fetchAllTags()        
       }else{
         this.bytags = false; 
         this.tagSelected = '';
+      }
+      if(sortby === 'hits'){
+        this.sortbyhits = true;    
+      }else{ 
+        this.sortbyhits = false; 
+      }      
+      if(sortby === 'response'){
+        this.byresponse = true;
+      }else {
+        this.byresponse = false;
       }
       const response = await ArticleService.fetchArticles({ sortby: sortby })
       this.posts = response.data.posts
