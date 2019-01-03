@@ -75,4 +75,9 @@ export default {
   border: none;
   cursor: pointer;
 }
+button:hover {
+  background: #fff;
+  color: #4d7ef7;
+  border: 1px solid #4d7ef7;
+}
 </style>

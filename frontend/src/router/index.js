@@ -16,15 +16,6 @@ Vue.directive("highlight", (el) => {
       hljs.highlightBlock(block);
   });
 });
-// Vue.directive('highlight',{
-//   update: function (el) {  
-//   let blocks = el.querySelectorAll('pre code');
-//       blocks.forEach((block)=>{
-//         hljs.highlightBlock(block)
-//       })
-//   }
-// })
-
 
 Vue.use(Router)
 

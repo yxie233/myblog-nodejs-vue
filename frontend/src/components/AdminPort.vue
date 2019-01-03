@@ -83,7 +83,7 @@ export default {
             this.user=result.body
         }
     }, function(res){
-            console.log('会话失败：'+res.status);
+            console.log('fail login：'+res.status);
             this.$router.push('/login');
     });  
   },*/
@@ -134,10 +134,6 @@ export default {
       .catch((errors) => {
           console.log(errors)          
       })
-      /*
-      for(let i=0; i < this.posts.length; i++){
-        this.posts[i].date = this.posts[i].date.split(" ")[0]
-      }*/
     },
     async fetchAllTags () {
       const res = await ArticleService.fetchAllTags();

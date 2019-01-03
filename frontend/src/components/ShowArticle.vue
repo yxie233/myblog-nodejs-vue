@@ -21,47 +21,48 @@
     <div align="left" class="comments">
               
         <div v-if="comments.length>0">
-          <h5 style="background:#e0dede; margin-bottom:0px;">Response({{cmtCount}})</h5>  
-            <div v-for="item in comments">
-              <table class="table">        
-                <div class="rpl-names">       
-                  <font color="#4682B4">&nbsp;<b>{{item.username}}</b></font>:
-                </div>
-                <p v-highlight class="rpl-content" v-html="mymarked(item.content)"></p>
-               
-                <div class="comments-rpl" v-if="item.comment_replies != null">    
-                    <div v-for="reply in item.comment_replies">
-                      <div class="rpl-cell">
-                        <div class="rpl-names">
-                          <font color="#4682B4">&nbsp;<b>{{reply.reply_username}}</b></font>
-                          &nbsp;reply to <font color="#4682B4"><b>{{reply.reply_to}}</b></font>:  
-                        </div>
-                        <div v-highlight class="rpl-content-child" v-html="mymarked(reply.reply_content)"></div>                                         
-                        <div class="timerpl">
+          <h5 style="background:#e0dede; margin-bottom:0px; cursor:pointer;" @click="showCmt()">Response({{cmtCount}})</h5>  
+            <div v-if="showCmts">
+              <div v-for="item in comments">
+                <table class="table">        
+                  <div class="rpl-names">       
+                    <font color="#4682B4">&nbsp;<b>{{item.username}}</b></font>:
+                  </div>
+                  <p v-highlight class="rpl-content" v-html="mymarked(item.content)"></p>
+                
+                  <div class="comments-rpl" v-if="item.comment_replies != null">    
+                      <div v-for="reply in item.comment_replies">
+                        <div class="rpl-cell">
+                          <div class="rpl-names">
+                            <font color="#4682B4">&nbsp;<b>{{reply.reply_username}}</b></font>
+                            &nbsp;reply to <font color="#4682B4"><b>{{reply.reply_to}}</b></font>:  
+                          </div>
+                          <div v-highlight class="rpl-content-child" v-html="mymarked(reply.reply_content)"></div>                                         
+                          <div class="timerpl">
+                          
+                            &nbsp;{{reply.reply_dateTime}}
+                            <div style="float:right; text-align:right; cursor:pointer;">
+                              <span v-if="admin"><a @click="deleteCommentReply(item._id, reply._id)">Delete</a>&nbsp;</span>
+                              <a href="#cmtbox" @click="replyComment(item._id, reply.reply_username)">Reply</a>&nbsp;
+                            </div>                                
                         
-                          &nbsp;{{reply.reply_dateTime}}
-                          <div style="float:right; text-align:right">
-                            <span v-if="admin"><a @click="deleteCommentReply(item._id, reply._id)">Delete</a>&nbsp;</span>
-                            <a href="#cmtbox" @click="replyComment(item._id, reply.reply_username)">Reply</a>&nbsp;
-                          </div>                                
-                       
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <br />
-                </div>
-
-                <div class="timerpl">
-                  <span>&nbsp;{{item.dateTime}}</span>
-                  <div style="float:right; text-align:right">
-                    <span v-if="admin"><a @click="deleteCommentReply(item._id, null)">Delete</a>&nbsp;</span>
-                    <a href="#cmtbox" @click="replyComment(item._id, item.username)">Reply</a>&nbsp;
+                      <br />
                   </div>
-                </div>
-               
-              </table>
+
+                  <div class="timerpl">
+                    <span>&nbsp;{{item.dateTime}}</span>
+                    <div style="float:right; text-align:right; cursor:pointer;">
+                      <span v-if="admin"><a @click="deleteCommentReply(item._id, null)">Delete</a>&nbsp;</span>
+                      <a href="#cmtbox" @click="replyComment(item._id, item.username)">Reply</a>&nbsp;
+                    </div>
+                  </div>
+                
+                </table>
+              </div>
             </div>
-          
         </div>
         <div v-else  style="background:#e0dede;">&nbsp;No response yet, leave the first comment.</div>
     </div>
@@ -71,7 +72,7 @@
         
         <div class="infoInputLine">
          
-            NAME <input type="text" name="commentUsername" placeholder="Your Name" v-model="commentUsername">
+            NAME <input type="text" name="commentUsername" placeholder="Nick Name" v-model="commentUsername">
       
             EMAIL <input type="text" name="commentEmail" placeholder="Your Email" v-model="commentEmail">
          
@@ -93,7 +94,7 @@
 
           <a href="#cmtbox"  @click="mdpreview()">Preview  (Markdown is supported)</a>
           <div style="float:right">
-             <button class="btn" @click="addComment">Post&nbsp;</button>          
+             <button class="btn" @click="addComment">Post</button>          
           </div>
         </div>
         
@@ -148,7 +149,8 @@ export default {
       cmtCount: 0,
       pageView: 0,
       warning: '',
-      admin: false
+      admin: false,
+      showCmts: true
     }
   },
   computed: {
@@ -180,6 +182,9 @@ export default {
       // since markdown need 2 whitespace to start a new line, so I auto add it
       this.commentText = this.commentText.replace(/\n$/i,"  \n");       
     },
+    showCmt: function(){
+      this.showCmts = !this.showCmts
+    },
     async checkLogin () {
       await ArticleService.checkLogin()
         .then((response) => {
@@ -202,7 +207,7 @@ export default {
       this.date= response.data.date
       this.tags = response.data.tags;
       this.pageView = response.data.page_view;
-      //console.log('快看快看'+JSON.stringify(response.data.date))
+      //console.log('kkkk'+JSON.stringify(response.data.date))
       if(this.tags!== null && this.tags[0]=="")
         this.tags = null
     },
@@ -309,7 +314,7 @@ export default {
 .infoInputLine {
   margin-top: 3px;
   margin-left: 10px;
-  width: 97%;
+  width: 91%;
   outline:none;
 }
 .previewCss {
@@ -423,6 +428,21 @@ a:hover {color:#CC3300;}
   margin-right: 5px;
   cursor: pointer;             
 }
-
+.btn {
+  background: #4d7ef7;
+  color: #fff;
+  padding: 3px;
+  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: bold;
+  width: 60px;
+  border: none;
+  cursor: pointer;
+}
+button:hover {
+  background: #fff;
+  color: #4d7ef7;
+  border: 1px solid #4d7ef7;
+}
 </style>
 

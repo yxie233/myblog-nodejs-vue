@@ -5,12 +5,17 @@ const morgan = require('morgan')
 const path = require('path')
 const cookieSession = require('cookie-session')
 
+
 const app = express()
 app.use(morgan('combined'))
+// var favicon = require('serve-favicon');
+// app.use(favicon( path.join(__dirname, '../../client/static/favicon.ico')));
+app.use('/favicon.ico', express.static(path.join(__dirname, '../../client/static/favicon.ico')));
 // app.use(bodyParser.json())
 app.use(bodyParser.json({limit: '10mb'})); // set limit data size of request
 app.use(bodyParser.urlencoded({limit: '10mb', extended: true}));
 app.use(cors())
+
 
 const viewsRoot = path.join(__dirname, '../../client/dist');
 app.use(express.static(viewsRoot))
@@ -33,7 +38,8 @@ var Post = mongoose.model("Post"),
     Article = mongoose.model('Article'),
     Comment = mongoose.model('Comment'),
     Admin = mongoose.model('Admin'),
-    Tags = mongoose.model('Tags');
+    Tags = mongoose.model('Tags'),
+    Visitor = mongoose.model('Visitor');
 
 ///////////////---------
 const passport = require('passport');
@@ -89,12 +95,15 @@ app.get("/api/checklogin", (req, res) => {
 
 
 
+
 //////////////-----
 
 
 /* send static pages 
 */
-app.get('*', function (req, res, next) {
+app.get('*', function (req, res, next) { console.log("@@@33 "+JSON.stringify(req.headers)+req.headers["x-forwarded-for"]);
+  recordVisitor(req.headers["x-forwarded-for"], req.headers["user-agent"])
+  googleAnalyticsTracking(req.originalUrl, req.headers["x-forwarded-for"], req.headers["user-agent"]);
   // console.log("kkkk: "+ req.originalUrl.indexOf('/article'))
   if(req.originalUrl.indexOf('/article')==0 || req.originalUrl.indexOf('/editArticle')==0 
     || req.originalUrl.indexOf('/login')==0 || req.originalUrl.indexOf('/admin')==0
@@ -107,9 +116,38 @@ app.get('*', function (req, res, next) {
   }
 });
 
+function recordVisitor(ip, agent){
+  if(ip === undefined) return;
+ 
+  Visitor.findOne({client_ip: ip}, function (error, v) {
+    if (error) { console.error(error); } 
+    // console.log("@@@ "+JSON.stringify(v)+ip);
+    if(v !== null){
+      v.client_ip = ip;
+      v.date = myDate()
+      v.agent = agent;
+      v.save(function (error) {
+        if (error) {
+          console.log(error)
+        }  
+      })
+    }else{
+      var new_v = new Visitor({
+        client_ip: ip,
+        date: myDate(),
+        agent: agent
+      })
+      new_v.save(function (error) {
+        if (error) {
+          console.log(error)
+        }  
+      })
+    }
+  })    
+}
 
 function format(t){
-  // console.log("kkkkkk&& "+ t)
+  console.log("kkkkkk&& "+ t)
   return t>9?t:("0"+t);
 }
 
@@ -122,83 +160,9 @@ function myDate() {
       sec = format(date.getSeconds());
 
   let time = date.getFullYear() + "-" + month + "-" + day + " "+h+":"+min+":"+sec;
-
   return time;
 }
   
-
-// Add new post
-app.post('/posts', (req, res) => {
-  var db = req.db;
-  var title = req.body.title;
-  var description = req.body.description;
-  var new_post = new Post({
-    title: title,
-    description: description
-  })
-
-  new_post.save(function (error) {
-    if (error) {
-      console.log(error)
-    }
-    res.send({
-      success: true,
-      message: 'Post saved successfully!'
-    })
-  })
-})
-
-// Fetch all posts
-app.get('/posts', (req, res) => {
-  Post.find({}, 'title description', function (error, posts) {
-    if (error) { console.error(error); }
-    res.send({
-      posts: posts
-    })
-  }).sort({_id:-1})
-})
-
-// Fetch single post
-app.get('/post/:id', (req, res) => {
-  var db = req.db;
-  Post.findById(req.params.id, 'title description', function (error, post) {
-    if (error) { console.error(error); }
-    res.send(post)
-  })
-})
-
-// Update a post
-app.put('/posts/:id', (req, res) => {
-  var db = req.db;
-  Post.findById(req.body.id, 'title description', function (error, post) { //#params
-    if (error) { console.error(error); }
-
-    post.title = req.body.title
-    post.description = req.body.description
-    post.save(function (error) {
-      if (error) {
-        console.log(error)
-      }
-      res.send({
-        success: true
-      })
-    })
-  })
-})
-
-// Delete a post
-app.delete('/posts/:id', (req, res) => {
-  Post.remove({
-    _id: req.params.id
-  }, function(err, post){
-    if (err)
-      res.send(err)
-    res.send({
-      success: true
-    })
-  })
-
-})
 
 // Add new article
 app.post('/api/articles', myAuthenticate, (req, res) => {
@@ -232,10 +196,11 @@ app.post('/api/articles', myAuthenticate, (req, res) => {
   })
 })
 
+
 // Fetch all art
 app.get('/api/articles/:sortby', (req, res) => {
   let sortby = req.params.sortby;
-  let obj=({_id: -1}); console.log("@@@ "+JSON.stringify(req.params));
+  let obj=({_id: -1});
   if(sortby === 'hits'){
     obj={page_view:-1};
   }else if(sortby === 'response'){
@@ -550,7 +515,7 @@ app.get('/api/comment/:id', (req, res) => {
   })
 })
 
-// Update add a cmt by add a reply to it
+// Update a cmt by add a reply to it
 app.put('/api/comment/:id', (req, res) => {
   Comment.find({article_id: req.params.id}, function (error, cmt) {
     if (error) { console.error(error); }

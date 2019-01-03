@@ -12,7 +12,8 @@ var ArticleSchema = new Schema({
   tags: [String],
   date: String,
   isPublish: Boolean,
-  page_view: Number 
+  page_view: Number,
+  comment_num: Number
 });
 
 var AidTrackSchema = new Schema({
@@ -62,7 +63,14 @@ var TagsSchema = new Schema({
   articles_id: [String]
 });
 
-
+var VisitorSchema = new Schema({
+  client_ip: {
+    type: String,
+    unique: true
+  },
+  agent: String,
+  date: String
+});
 
 
 module.exports = mongoose.model("Post", PostSchema);
@@ -71,3 +79,4 @@ module.exports = mongoose.model("AidTrack", AidTrackSchema);
 module.exports = mongoose.model("Comment", CommentSchema); 
 module.exports = mongoose.model("Admin", AdminSchema); 
 module.exports = mongoose.model("Tags", TagsSchema); 
+module.exports = mongoose.model("Visitor", VisitorSchema); 

@@ -32,7 +32,7 @@
             <span class="createTime">{{" (" + post.page_view +")"}}</span>
           </span>
           <span v-else>
-            <span class="createTime">{{" (" + month[post.date.split("-")[1]] + " "+ post.date.split("-")[0] +")"}}</span>
+            <span class="createTime">{{" (" + month[post.date.split("-")[1]-0] + " "+ post.date.split("-")[0] +")"}}</span>
           </span>
         </li>
               
@@ -64,7 +64,8 @@ export default {
   data () {
     return {
       posts: [],
-      month: ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'June', 'July', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+      month: ['', 'January', 'february', 'March', 'April', 'May', 'June', 'July', 'August',
+       'September', 'October', 'November', 'December'],
       sortbyhits: false,
       bytags: false,
       byresponse: false,
