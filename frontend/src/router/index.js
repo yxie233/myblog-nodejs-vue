@@ -1,13 +1,11 @@
 import Vue from 'vue'
 import Router from 'vue-router'
-import NewArticle from '@/components/NewArticle'
-import Posts from '@/components/Posts'
-import NewPost from '@/components/NewPost'
-import EditPost from '@/components/EditPost'
-import ShowArticle from '@/components/ShowArticle'
-import EditArticle from '@/components/EditArticle'
-import Login from '@/components/Login'
-import AdminPort from '@/components/AdminPort'
+import NewArticle from '@/pages/NewArticle'
+import Posts from '@/pages/Posts'
+import ShowArticle from '@/pages/ShowArticle'
+import EditArticle from '@/pages/EditArticle'
+import Login from '@/pages/Login'
+import AdminPort from '@/pages/AdminPort'
 import RefreshSupplier from '@/components/RefreshSupplier'
 
 Vue.directive("highlight", (el) => {
@@ -31,16 +29,6 @@ export default new Router({
       path: '/login',
       name: 'Login',
       component: Login
-    },
-    {
-      path: '/posts/new',
-      name: 'NewPost',
-      component: NewPost
-    },
-    {
-      path: '/posts/:id',
-      name: 'EditPost',
-      component: EditPost
     },
     {
       path: '/article/new',

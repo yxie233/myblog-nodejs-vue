@@ -31,7 +31,7 @@
             <span class="createTime">{{" (" + post.page_view +")"}}</span>
           </span>
           <span v-else>
-            <span class="createTime">{{" (" + month[post.date.split("-")[1]] + " "+ post.date.split("-")[0] +")"}}</span>
+            <span class="createTime">{{" (" + month[post.date.split("-")[1]-0] + " "+ post.date.split("-")[0] +")"}}</span>
           </span>         
          
           <div style="float:right; text-align:right">
@@ -54,9 +54,9 @@
 </template>
 
 <script>
-import linetitle from './LineTitle';
-import myheader from './MyHeader';
-import myFooter from './MyFooter';
+import linetitle from '@/components/LineTitle';
+import myheader from '@/components/MyHeader';
+import myFooter from '@/components/MyFooter';
 import ArticleService from '@/services/ArticleService'
 export default {
   name: 'posts',

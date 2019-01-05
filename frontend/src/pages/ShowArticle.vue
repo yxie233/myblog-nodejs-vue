@@ -84,7 +84,7 @@
 
         </div>   
         <div class="previewCss" style="color:red; font-size:13px" v-if="this.warning !== ''">{{this.warning}}</div>
-        <textarea rows="6" placeholder="Leave a response"  v-model="commentText"></textarea>
+        <textarea rows="6" placeholder="Leave a response" @input="autoNewline" v-model="commentText"></textarea>
 
         <div class="previewCss">
           <div v-if="preview != false" class=“post-content”>
@@ -107,8 +107,8 @@
 </template>
 
 <script>
-import myheader from './MyHeader';
-import myFooter from './MyFooter';
+import myheader from '@/components/MyHeader';
+import myFooter from '@/components/MyFooter';
 import ArticleService from '@/services/ArticleService'
 import marked from 'marked'
 

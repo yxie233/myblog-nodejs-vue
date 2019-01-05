@@ -50,9 +50,9 @@
 </template>
 
 <script>
-import linetitle from './LineTitle';
-import myheader from './MyHeader';
-import myFooter from './MyFooter';
+import linetitle from '@/components/LineTitle';
+import myheader from '@/components/MyHeader';
+import myFooter from '@/components/MyFooter';
 import ArticleService from '@/services/ArticleService'
 export default {
   name: 'posts',
