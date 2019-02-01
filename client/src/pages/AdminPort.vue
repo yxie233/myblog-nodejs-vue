@@ -4,42 +4,46 @@
       <my-header></my-header>
     </div>
 
-   <line-title :title="'POSTS (' + posts.length + ')'"></line-title>
-
-    
+    <line-title :title="'POSTS (' + posts.length + ')'"></line-title>
+    <div>
+        <router-link v-bind:to="{ name: 'NewArticle' }" class=""><u>Add article</u></router-link>        
+    </div>
     <p class="sort">
       Sort by: <span :class="{ active: sortby === 'date'}"  @click="getPosts('date')">[Date]</span>
       <span :class="{ active: sortby === 'hits'}" @click="getPosts('hits')">[Hits]</span>
-      <span :class="{ active: sortby === 'response'}" @click="getPosts('response')">[Response]</span>
-      <span :class="{ active: sortby === 'tags'}" @click="getPosts('tags')">[Tags]</span> 
+      <span :class="{ active: sortby === 'tags'}" @click="getPosts('tags')">[Tags]</span>  
     </p>
     <p class="sort" v-if="bytags">--
-      <span  v-for="tag in alltags">
+      <span v-for="tag in alltags">
           <span :class="{ active: tagSelected === tag.tagname}" @click="getPostsByTag(tag.tagname)"> [{{tag.tagname}}] </span>
       </span>           
     </p>
+
     <div v-if="posts.length > 0">
+      <my-modal :deltinfo=deltConfirm v-show="isModalVisible" @close="closeModal" @fromModal="onFromModal"/>
       <ul class="posts-list">
         <li v-for="post in posts">
           
           <router-link class="title" v-bind:to="{ name: 'ShowArticle', params: { id: post._id } }">
             <a>{{ post.title}}</a>
           </router-link>
-          <span v-if="byresponse">
-            <span class="createTime">{{" (" + post.comment_num+")"}}</span>
-          </span>
-          <span v-else-if="sortbyhits">
+          <span v-if="sortbyhits">
             <span class="createTime">{{" (" + post.page_view +")"}}</span>
           </span>
           <span v-else>
             <span class="createTime">{{" (" + month[post.date.split("-")[1]-0] + " "+ post.date.split("-")[0] +")"}}</span>
-          </span>
+          </span>         
+         
+          <div style="float:right; text-align:right">
+            <router-link v-bind:to="{ name: 'EditArticle', params: { id: post._id } }">Edit</router-link> |
+            <a href="#" @click="deletePost(post._id, post.title)">Delete</a>
+          </div>
         </li>
               
       </ul>
     </div>
     <!--div v-else>
-      Loading... You may refresh this page<br />
+      Loading... <br />
     </div-->    
 
     <div class="footer">
@@ -53,58 +57,47 @@
 import linetitle from '@/components/LineTitle';
 import myheader from '@/components/MyHeader';
 import myFooter from '@/components/MyFooter';
+import myModal from '@/components/MyModal';
 import ArticleService from '@/services/ArticleService'
 export default {
   name: 'posts',
   components: {
     MyHeader: myheader,
     MyFooter: myFooter,
-    LineTitle: linetitle
+    LineTitle: linetitle,
+    MyModal: myModal
   },
   data () {
     return {
       posts: [],
-      month: ['', 'January', 'february', 'March', 'April', 'May', 'June', 'July', 'August',
-       'September', 'October', 'November', 'December'],
+      month: ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'June', 'July', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
       sortbyhits: false,
       bytags: false,
-      byresponse: false,
       sortby: 'date',
       tagSelected: '',
       alltags: [],
-      passTag: ''
+      isModalVisible: false,
+      deltConfirm: {aid:"", title:""}
     }
-  },
+  },/*
+  created () {
+    
+  },*/
   mounted () {
     this.checkLogin(),
     this.getPosts('date')
   },
   methods: {
-    async getPosts (sortby) {      
-      if(this.$route.params.tagSelect !== undefined){
-        sortby = 'tags'
-        this.getPostsByTag(this.$route.params.tagSelect)
-        this.passTag = this.$route.params.tagSelect
-        this.$route.params.tagSelect = undefined
-      }   
+    async getPosts (sortby) {
       this.sortby = sortby
+      if(sortby === 'hits'){
+        this.sortbyhits = true;
+        this.tagSelected = '';
+      }else{ this.sortbyhits = false; }
       if(sortby === 'tags'){
         this.bytags = true;
-        this.fetchAllTags()        
-      }else{
-        this.bytags = false; 
-        this.tagSelected = '';
-      }
-      if(sortby === 'hits'){
-        this.sortbyhits = true;    
-      }else{ 
-        this.sortbyhits = false; 
-      }      
-      if(sortby === 'response'){
-        this.byresponse = true;
-      }else {
-        this.byresponse = false;
-      }
+        this.fetchAllTags()
+      }else{ this.bytags = false; this.tagSelected = '';}
       const response = await ArticleService.fetchArticles({ sortby: sortby })
       this.posts = response.data.posts
       /*
@@ -112,38 +105,69 @@ export default {
         this.posts[i].date = this.posts[i].date.split(" ")[0]
       }*/
     },
+    async deletePost (id, title) {
+      this.deltConfirm.aid=id;
+      this.deltConfirm.title=title;
+      this.showModal()
+     
+      // await ArticleService.deleteArticle(id)
+      // this.getPosts('date')
+    },
     async checkLogin () {
       await ArticleService.checkLogin()
         .then((response) => {
-          // console.log(response["data"])
-          if(response["data"]==="ok")
-            this.$router.push({ name: 'AdminPort' })
+          // console.log(response)
+          if(response["data"]==="no")
+            this.$router.push({ name: 'Posts' })
         })
         .catch((errors) => {
-          //  console.log("Post.vue err: "+errors)       
-        })    
+          console.log(errors)
+          this.$router.push("/")
+        })
     },
     async fetchAllTags () {
-      await ArticleService.fetchAllTags().then((response) => {
-        this.alltags = response.data.tags
-        if(response["data"].tags[0].tagname)
-        if(this.passTag !== ''){
-           this.getPostsByTag(this.passTag)
-           this.passTag = ''
-        }else
-          this.getPostsByTag(response["data"].tags[0].tagname)
-      })
+      const res = await ArticleService.fetchAllTags();
+      this.alltags = res.data.tags
     },
     async getPostsByTag (tag) {
-      this.tagSelected = tag;
+      this.tagSelected = tag
       const res = await ArticleService.getArticlesByTag({tag: tag});
       this.posts = res.data.posts
+    },
+    showModal: function () {
+      this.isModalVisible = true
+    },
+    closeModal: function () {
+      this.isModalVisible = false
+    },
+    async onFromModal (aid) {     
+      await ArticleService.deleteArticle(aid)
+      this.getPosts('date')
+      this.$router.push("/") 
+      // console.log("++++++ "+aid)
     }
   }
 }
 </script>
-
 <style scoped>
+.table-wrap {
+  width: 50%;
+  margin: 0 auto;
+  text-align: center;
+  font-size: 14px;
+}
+table th, table tr {
+  text-align: left;
+}
+table thead {
+  background: #f2f2f2;
+}
+table tr td {
+  padding: 0px;
+}
+table tr:nth-child(0) {
+  background: #f2f2f2;
+}
 a {
   color: #132051;
   text-decoration: none;
@@ -155,6 +179,10 @@ a.add_post_link {
   text-transform: uppercase;
   font-size: 12px;
   font-weight: bold;
+}
+a:hover {
+  color:#CC3300;
+  text-decoration:none;
 }
 .sort {
   font-size: 13px;
@@ -180,7 +208,7 @@ a.add_post_link {
   width: 100%;
   text-align: center;
 }
-.posts .line {
+ .posts .line {
   display: inline-block;
   width: 280px;
   border-top: 1px solid #ccc ;
@@ -192,12 +220,14 @@ a.add_post_link {
   vertical-align: sub;
 }
 
+
 .homepage {
   height: 100%;
   padding: 0 10px;   
   max-width: 640px;
   margin: 0 auto;
-}   
+}
+   
 .posts-list {
   margin-bottom: 30px;
   padding: 0 10px;
@@ -220,7 +250,6 @@ a.add_post_link {
   font-size: 12px;
 }
 
-
 .background {
   position: fixed;
   left: 0;
@@ -228,7 +257,7 @@ a.add_post_link {
   z-index: -1;
   width: 100%;
   height: 100%;
-  background: url("") no-repeat fixed top;
+  /* background: url("../assets/posts.png") no-repeat fixed top; */
   background-size: cover;
   opacity: 0.2;
   filter: blur(3px);

@@ -1,13 +1,8 @@
 <template>
   <div class="articles">
-    <h1>Edit article</h1>
+    <h1 style="text-transform: uppercase;">Edit {{page}}</h1>
       <div class="form" style="margin-bottom: 400px">
-        <div>
-          <input type="text" name="title" placeholder="TITLE" v-model="title">
-        </div>
-        <div>
-          <input type="text" name="tags" placeholder="TAG" v-model="tags">
-        </div>
+   
         <div class="content">
           <div class="left"><textarea rows="15" cols="15" @input="autoNewline" placeholder="CONTENT" v-model="content"></textarea></div>
           <div class="right"> <p v-highlight style="text-align: justify; word-break: break-all;" v-html="mymarked(content)"></p></div>
@@ -15,7 +10,7 @@
        
         
       </div>
-      <div >
+      <div>
           <button class="app_post_btn" @click="updatePost">Update</button>
       </div>
   </div>
@@ -38,12 +33,12 @@ smartypants: false
 })
 
 export default {
-  name: 'EditArticle',
+  name: 'EditPage',
   data () {
     return {
-      title: '',
       content: '',
-      tags: ''
+      data: '',
+      page: ''
     }
   },
   mounted () {
@@ -52,33 +47,30 @@ export default {
   },
   methods: {
     mymarked: function (x) {
-      return marked(x)
+        if(x==null || x===undefined)
+            return ''
+        return marked(x)
     },
     async getPost () {
-      const response = await ArticleService.getArticle({
-        id: this.$route.params.id
-      })
-      this.title = response.data.title,
-      this.content = response.data.content
-      if( response.data.tags !== null){
-        for(let i=0; i < response.data.tags.length;i++){
-          this.tags+=response.data.tags[i]+'@';
-        }
-        this.tags = this.tags.substring(0, this.tags.length-1)
+      this.page = this.$route.params.page
+      const response = await ArticleService.getPage({ page: this.page })
+      this.data = response.data.data[0]
+      if(this.data !== undefined){
+        this.content = this.data.content
       }
       
+    //   console.log(response.data.data[0])
     },
     autoNewline: function(){
       // since markdown need 2 whitespace to start a new line, so I auto add it
       this.content = this.content.replace(/\n$/i,"  \n");       
     },
     async updatePost () {
-      await ArticleService.updateArticle({
-        id: this.$route.params.id,
-        title: this.title,
-        content: this.content,
-        tags: this.tags
+      await ArticleService.updatePage({
+        page: this.page,
+        content: this.content
       })
+
       this.$router.push({ name: 'Posts' })
     },
     async checkLogin () {
@@ -143,10 +135,12 @@ export default {
   width: 520px;
   border: none;
   cursor: pointer;
+  border-radius: 2px;
 }
 button:hover {
   background: #fff;
   color: #4d7ef7;
   border: 1px solid #4d7ef7;
+  border-radius: 2px;
 }
 </style>

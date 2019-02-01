@@ -1,10 +1,6 @@
 var mongoose = require("mongoose");
 var Schema = mongoose.Schema;
 
-var PostSchema = new Schema({
-  title: String,
-  description: String
-});
 
 var ArticleSchema = new Schema({
   title: String,
@@ -72,11 +68,17 @@ var VisitorSchema = new Schema({
   date: String
 });
 
+var OtherPageSchema = new Schema({
+  pageName: String,
+  content: String,
+  date: String,
+  page_view: Number
+});
 
-module.exports = mongoose.model("Post", PostSchema);
 module.exports = mongoose.model("Article", ArticleSchema);
 module.exports = mongoose.model("AidTrack", AidTrackSchema); 
 module.exports = mongoose.model("Comment", CommentSchema); 
 module.exports = mongoose.model("Admin", AdminSchema); 
 module.exports = mongoose.model("Tags", TagsSchema); 
 module.exports = mongoose.model("Visitor", VisitorSchema); 
+module.exports = mongoose.model("OtherPage", OtherPageSchema); 

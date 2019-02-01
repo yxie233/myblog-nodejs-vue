@@ -6,7 +6,7 @@
 
     <h2 align="left">{{title}}</h2>
      
-    <div class="createTime">{{date}} (View:{{pageView}})</div>        
+    <div class="createTime">{{date}} (Hits:{{pageView}})</div>        
     <div v-if="tags != null" class="sort">
       Tags:&nbsp;
         <span v-for="tag in tags">
@@ -256,7 +256,6 @@ export default {
       }
       this.getComments(); 
       this.resetComment() 
-      // to do refresh page
     },
     async getComments () {
       const response = await ArticleService.getComments({
@@ -438,11 +437,13 @@ a:hover {color:#CC3300;}
   width: 60px;
   border: none;
   cursor: pointer;
+  border-radius: 2px;
 }
 button:hover {
   background: #fff;
   color: #4d7ef7;
   border: 1px solid #4d7ef7;
+  border-radius: 2px;
 }
 </style>
 

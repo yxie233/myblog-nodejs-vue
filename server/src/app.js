@@ -27,19 +27,20 @@ app.use(cookieSession({
 }))
 
 var mongoose = require('mongoose');
-mongoose.connect('mongodb://bilicrawlerAdmin:addData2018@ds253889.mlab.com:53889/bilibilidata', { useNewUrlParser: true });
+// You may replace the following mongodb uri with your mongodb uri
+mongoose.connect('mongodb://testonly:test123@ds253889.mlab.com:53889/bilibilidata', { useNewUrlParser: true });
 var db = mongoose.connection;
 db.on("error", console.error.bind(console, "connection error"));
 db.once("open", function(callback){
   console.log("db Connection Succeeded");
 });
-var schema = require('../models/posts'); // in order to use models
-var Post = mongoose.model("Post"),
-    Article = mongoose.model('Article'),
+var schema = require('../models/dbmodels'); // in order to use models
+var Article = mongoose.model('Article'),
     Comment = mongoose.model('Comment'),
     Admin = mongoose.model('Admin'),
     Tags = mongoose.model('Tags'),
-    Visitor = mongoose.model('Visitor');
+    Visitor = mongoose.model('Visitor'),
+    OtherPage = mongoose.model('OtherPage');
 
 ///////////////---------
 const passport = require('passport');
@@ -96,18 +97,15 @@ app.get("/api/checklogin", (req, res) => {
 
 
 
-//////////////-----
-
-
 /* send static pages 
 */
-app.get('*', function (req, res, next) { console.log("@@@33 "+JSON.stringify(req.headers)+req.headers["x-forwarded-for"]);
+app.get('*', function (req, res, next) { 
+  // console.log("@@@33 "+JSON.stringify(req.headers)+req.headers["x-forwarded-for"]);
   recordVisitor(req.headers["x-forwarded-for"], req.headers["user-agent"])
-  googleAnalyticsTracking(req.originalUrl, req.headers["x-forwarded-for"], req.headers["user-agent"]);
-  // console.log("kkkk: "+ req.originalUrl.indexOf('/article'))
+ 
   if(req.originalUrl.indexOf('/article')==0 || req.originalUrl.indexOf('/editArticle')==0 
     || req.originalUrl.indexOf('/login')==0 || req.originalUrl.indexOf('/admin')==0
-    || req.originalUrl.indexOf('/static')==0) {
+    || req.originalUrl.indexOf('/static')==0 || req.originalUrl.indexOf('/page')==0) {
       res.sendFile("index.html", { root: viewsRoot })
   }else if(req.originalUrl.indexOf('/api')==0) {
       next();
@@ -147,7 +145,7 @@ function recordVisitor(ip, agent){
 }
 
 function format(t){
-  console.log("kkkkkk&& "+ t)
+  //console.log("kkkkkk&& "+ t)
   return t>9?t:("0"+t);
 }
 
@@ -177,7 +175,8 @@ app.post('/api/articles', myAuthenticate, (req, res) => {
     tags: tags,
     date: date,
     isPublish: true,
-    page_view: 0
+    page_view: 0,
+    comment_num: 0
   })
 
   new_post.save(function (error) {
@@ -507,7 +506,15 @@ app.get('/api/comment/:id', (req, res) => {
     if (error) { console.error(error); }
     
     if (cmt.length > 0){
-      res.send(cmt[0])
+      let mycmt=cmt[0];
+      for(let i=0;i<mycmt.comment.length;i++){
+        mycmt.comment[i].email='';
+        if(mycmt.comment[i].comment_replies !== null){
+          for(let j=0;j<mycmt.comment[i].comment_replies.length;j++)
+            mycmt.comment[i].comment_replies[j].reply_email = '';
+        }
+      }console.log('++++++++++++++=!!! '+JSON.stringify(mycmt));
+      res.send(mycmt)
     }
     else{
       res.send({comment: []})
@@ -594,6 +601,51 @@ app.put('/api/deleteCommentReply/:id', (req, res) => {
           success: true,
           message: 'Update comments!'
     })        
+  })
+})
+
+// Fetch a page
+app.get('/api/otherpage/:pagename', (req, res) => {
+  let page = req.params.pagename;
+
+  OtherPage.find({ pageName: page}, function (error, data) {
+    if (error) { console.error(error); }
+    console.log('==============='+JSON.stringify(data))
+    res.send({
+      data: data
+    })
+  })
+})
+
+// Update a page
+app.put('/api/editpage/:pagename',  myAuthenticate, (req, res) => {
+  let page = req.params.pagename
+  OtherPage.find({ pageName: page}, function (error, data) { //#params
+    if (error) { console.error(error); }
+    console.log(req.body.content+'=====33=========='+JSON.stringify(data))
+    if(data.length == 0){
+      var newone = new OtherPage({
+        pageName: page,
+        content: req.body.content,
+        date: myDate(),
+        page_view: 0
+      })    
+      newone.save(function (error) {
+        if (error) {
+          console.log(error)
+        }
+      })
+    }else{
+      data[0].content = req.body.content
+      data[0].save(function (error) {
+        if (error) {
+          console.log(error)
+        }       
+      })
+    }     
+  })
+  res.send({
+    success: true
   })
 })
 

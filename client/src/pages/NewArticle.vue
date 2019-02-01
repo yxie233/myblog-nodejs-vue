@@ -8,12 +8,13 @@
         <div>
           <input type="text" name="tags" placeholder="TAG" v-model="tags">
         </div>
-        <div>
-          <textarea rows="15" cols="15" placeholder="CONTENT" v-model="content"></textarea>
-        </div>
-        <div>
-          <button class="app_post_btn" @click="addArticle">Post</button>
-        </div>
+        
+      </div>
+      <div>
+          <textarea placeholder="CONTENT" v-model="content"></textarea>
+      </div>
+      <div>
+        <button class="app_post_btn" @click="addArticle">Post</button>
       </div>
   </div>
 </template>
@@ -56,8 +57,17 @@ export default {
   }
 }
 </script>
-<style type="text/css">
-.form input, .form textarea {
+<style scoped>
+
+.form input{
+  width: 500px;
+  padding: 10px;
+  border: 1px solid #e0dede;
+  outline: none;
+  font-size: 12px;
+}
+textarea {  
+  height: 200px;
   width: 500px;
   padding: 10px;
   border: 1px solid #e0dede;
@@ -66,21 +76,25 @@ export default {
 }
 .form div {
   margin: 20px;
+  align-items: center;
 }
 .app_post_btn {
+  margin: 20px;
   background: #4d7ef7;
   color: #fff;
   padding: 10px 80px;
   text-transform: uppercase;
   font-size: 12px;
   font-weight: bold;
-  width: 520px;
+  width: 260px;
   border: none;
   cursor: pointer;
+  border-radius: 2px;
 }
 button:hover {
   background: #fff;
   color: #4d7ef7;
   border: 1px solid #4d7ef7;
+  border-radius: 2px;
 }
 </style>

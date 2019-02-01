@@ -42,5 +42,11 @@ export default {
   },
   getArticlesByTag (params) {
     return Api().get('api/articlesbytag/' + params.tag)
+  },
+  getPage (params) {
+    return Api().get('api/otherpage/' + params.page)
+  },
+  updatePage (params) {
+    return Api().put('api/editpage/' + params.page, params)
   }
 }

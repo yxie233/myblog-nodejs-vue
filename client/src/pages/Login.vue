@@ -74,10 +74,12 @@ export default {
   width: 323px;
   border: none;
   cursor: pointer;
+  border-radius: 2px;
 }
 button:hover {
   background: #fff;
   color: #4d7ef7;
   border: 1px solid #4d7ef7;
+  border-radius: 2px;
 }
 </style>
