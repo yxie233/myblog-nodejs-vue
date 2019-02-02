@@ -5,8 +5,9 @@
 1. clone or download this repo
 2. cd into the folder '..\myblog-nodejs-vue\server' and run command 'npm install'  
 3. cd into the folder '..\myblog-nodejs-vue\client' and run command 'npm install', then run command 'npm run build'
-4. open Chrome browser(or other browser) and goto http://localhost:8082
-5. The test admin for login is:  
+4. cd into the folder '..\myblog-nodejs-vue\server' and run command 'npm start'  
+5. open Chrome browser(or other browser) and goto http://localhost:8082
+6. The test admin for login is:  
   username: test123  
   password: testonly   
 
