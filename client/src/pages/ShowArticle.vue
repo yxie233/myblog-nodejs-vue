@@ -68,13 +68,13 @@
     </div>
 
       <div align="left" id="cmtbox" class="commentBox">
-       
+        
         
         <div class="infoInputLine">
          
             NAME <input type="text" name="commentUsername" placeholder="Nick Name" v-model="commentUsername">
       
-            EMAIL <input type="text" name="commentEmail" placeholder="Your Email" v-model="commentEmail">
+            EMAIL <input type="text" name="commentEmail" placeholder="You May Leave it Empty" v-model="commentEmail">
          
           <td>
             <div v-if="this.commentReplyTo !== ''"> 
@@ -226,7 +226,7 @@ export default {
       }else if(this.commentText === ''){
         this.warning='Response cannot be empty!'
         return;
-      }else{        
+      }else if(this.commentEmail !== ''){        
         let emailMatch = /^([a-zA-Z0-9_\.\-])+\@(([a-zA-Z0-9\-])+\.)+([a-zA-Z0-9]{2,4})+$/;
         if (!emailMatch.test(this.commentEmail))
         // this.warning=""+emailMatch.matches();

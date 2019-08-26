@@ -27,7 +27,6 @@ app.use(cookieSession({
 }))
 
 var mongoose = require('mongoose');
-// You may replace the following mongodb uri with your mongodb uri
 mongoose.connect('mongodb://testonly:test123@ds253889.mlab.com:53889/bilibilidata', { useNewUrlParser: true });
 var db = mongoose.connection;
 db.on("error", console.error.bind(console, "connection error"));
@@ -102,7 +101,7 @@ app.get("/api/checklogin", (req, res) => {
 app.get('*', function (req, res, next) { 
   // console.log("@@@33 "+JSON.stringify(req.headers)+req.headers["x-forwarded-for"]);
   recordVisitor(req.headers["x-forwarded-for"], req.headers["user-agent"])
- 
+  // console.log("kkkk: "+ req.originalUrl.indexOf('/article'))
   if(req.originalUrl.indexOf('/article')==0 || req.originalUrl.indexOf('/editArticle')==0 
     || req.originalUrl.indexOf('/login')==0 || req.originalUrl.indexOf('/admin')==0
     || req.originalUrl.indexOf('/static')==0 || req.originalUrl.indexOf('/page')==0) {
@@ -145,7 +144,7 @@ function recordVisitor(ip, agent){
 }
 
 function format(t){
-  //console.log("kkkkkk&& "+ t)
+  // console.log("kkkkkk&& "+ t)
   return t>9?t:("0"+t);
 }
 
@@ -322,7 +321,8 @@ function addtags(tags, art_id){
   }
 }
 function deleteTags(tags, art_id){
-  for(let i=0; i<tags.length; i++){ console.log('hey00000000000'+i)
+  for(let i=0; i<tags.length; i++){ 
+    // console.log('hey00000000000'+i)
     Tags.findOne({tagname: tags[i]}, function(err,obj) {
       if (err) { console.error(err); }
       if(obj === null){
@@ -460,7 +460,8 @@ function updateArticleCmtNum(aid){
 
 // Add a comment
 app.post('/api/comment', (req, res) => {
-
+  comments_cache[req.body.article_id]=null
+  // console.log(req.body.article_id + '+++++++RESET CACHE+++++++!! '+comments_cache[req.body.article_id]);
   Comment.find({article_id: req.body.article_id}, function (error, cmt) {
     if (error) { console.error(error); return; }
     var new_cmt = {
@@ -500,8 +501,15 @@ app.post('/api/comment', (req, res) => {
   
 })
 
+let comments_cache={}
 // Fetch cmts
 app.get('/api/comment/:id', (req, res) => {
+  if(comments_cache[req.params.id]!=null){
+    res.send(comments_cache[req.params.id])
+    // console.log('+++++++GET CACHE+++++++!! '+JSON.stringify(comments_cache[req.params.id]));
+    return
+  }
+
   Comment.find({article_id: req.params.id}, function (error, cmt) {
     if (error) { console.error(error); }
     
@@ -513,7 +521,9 @@ app.get('/api/comment/:id', (req, res) => {
           for(let j=0;j<mycmt.comment[i].comment_replies.length;j++)
             mycmt.comment[i].comment_replies[j].reply_email = '';
         }
-      }console.log('++++++++++++++=!!! '+JSON.stringify(mycmt));
+      }
+      //console.log('++++++++++++++=!!! '+JSON.stringify(mycmt));
+      comments_cache[req.params.id]=mycmt
       res.send(mycmt)
     }
     else{
@@ -524,6 +534,8 @@ app.get('/api/comment/:id', (req, res) => {
 
 // Update a cmt by add a reply to it
 app.put('/api/comment/:id', (req, res) => {
+  comments_cache[req.params.id]=null
+  // console.log(req.params.id + '+++++++RESET CACHE+++++++!! '+comments_cache[req.params.id]);
   Comment.find({article_id: req.params.id}, function (error, cmt) {
     if (error) { console.error(error); }
 
@@ -564,6 +576,8 @@ app.put('/api/comment/:id', (req, res) => {
 
 // Update a cmt by delete a reply
 app.put('/api/deleteCommentReply/:id', (req, res) => {
+  comments_cache[req.params.id]=null
+  // console.log(req.params.id + '+++++++RESET CACHE+++++++!! '+comments_cache[req.params.id]);
   Comment.find({article_id: req.params.id}, function (error, cmt) {
     if (error) { console.error(error); }
     var comments = cmt[0].comment;
